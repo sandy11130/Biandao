@@ -140,7 +140,7 @@
   .board-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .board-title { font-size: 13px; font-weight: 600; color: var(--text); }
   /* 可编辑的段数输入框 */
-  .seg-count-input { width: 2.2em; text-align: center; font-size: 13px; font-weight: 700; color: var(--orange); background: var(--orange-light); border: 1.5px solid var(--orange); border-radius: 6px; padding: 1px 4px; outline: none; font-family: inherit; -moz-appearance: textfield; }
+  .seg-count-input { width: 2.8em; text-align: center; font-size: 13px; font-weight: 700; color: var(--orange); background: var(--orange-light); border: 1.5px solid var(--orange); border-radius: 6px; padding: 1px 4px; outline: none; font-family: inherit; -moz-appearance: textfield; }
   .seg-count-input::-webkit-outer-spin-button,
   .seg-count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .board-actions { display: flex; gap: 6px; align-items: center; }
@@ -1352,9 +1352,8 @@ function doUndo(){
 // 段数输入框变化处理
 function onSegCountChange(inp){
   let n = parseInt(inp.value);
-  // 范围校验
+  // 范围校验：至少1段，不设上限
   if(isNaN(n)||n<1) n=1;
-  if(n>20) n=20;
   inp.value=n; // 修正显示
 
   const cur=state.script.length;
@@ -1426,7 +1425,7 @@ function closeAppendPopup(){
 function initBoard(){
   const bmTag=hasBenchmark()?` <span class="benchmark-active-pill">🎯 对标风格</span>`:'';
   document.getElementById('board-title').innerHTML=
-    `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" max="20" value="${state.script.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag}`;
+    `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" value="${state.script.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag}`;
   renderBoard();renderInsertTl();
 }
 
@@ -1459,7 +1458,7 @@ function renderBoard(){
     if(document.activeElement!==inp) inp.value=segs.length;
   }else{
     document.getElementById('board-title').innerHTML=
-      `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" max="20" value="${segs.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag2}`;
+      `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" value="${segs.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag2}`;
   }
 
   const s=segs[state.cur];
