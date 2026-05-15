@@ -589,15 +589,9 @@
         <div class="tl-with-btns">
           <button class="tl-side-btn tl-minus" onclick="deleteCurSeg()" title="删除当前这一段">－</button>
           <div class="tl" id="tl"></div>
-          <button class="tl-side-btn tl-plus" onclick="openAppendPopup()" title="在当前段落后面新增一段">＋</button>
+          <button class="tl-side-btn tl-plus" onclick="addBlankSegAfterCur()" title="在当前段落后面新增一段">＋</button>
         </div>
       </div>
-      <div class="tl-legend">
-        <div class="leg"><div class="leg-dot" style="background:var(--gray-3);border:1px solid var(--border)"></div>未拍</div>
-        <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>已完成</div>
-        <div class="leg"><div class="leg-dot" style="background:#fca5a5"></div>需补拍</div>
-      </div>
-    </div>
     <div id="detail-area"></div>
 
     <!-- 追加主题弹窗 -->
@@ -1398,6 +1392,21 @@ function deleteCurSeg(){
   segStates.splice(state.cur,1);
   originalScript.splice(state.cur,1);
   if(state.cur>=state.script.length)state.cur=state.script.length-1;
+  inlineEditingField=null;
+  renderBoard();renderInsertTl();
+}
+
+// ＋按钮：在当前段后面直接插入一个空白段
+function addBlankSegAfterCur(){
+  const badgeNames=['开头','铺垫','亮点','细节','服务','信任','价值','行动','感受','体验','特色','故事','互动','解答','总结','转化','彩蛋','补充','升华','结尾'];
+  const at=state.cur+1;
+  const idx=state.script.length;
+  const blank={badge:badgeNames[idx]||`第${idx+1}段`,script:'',action:'',tips:['','',''],dur:'5-8秒',scene:'待定'};
+  pushUndo(`在第${state.cur+1}段后插入空白段`);
+  state.script.splice(at,0,blank);
+  segStates.splice(at,0,'pending');
+  originalScript.splice(at,0,JSON.parse(JSON.stringify(blank)));
+  state.cur=at;
   inlineEditingField=null;
   renderBoard();renderInsertTl();
 }
