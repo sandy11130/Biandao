@@ -153,6 +153,10 @@
   .tl-wrap { margin-bottom: 8px; }
   .tl-hint { font-size: 10px; color: var(--text-3); margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
   .tl { display: flex; gap: 4px; flex-wrap: wrap; min-height: 48px; }
+  .tl.collapsed { max-height: 50px; overflow: hidden; }
+  .tl-expand-btn { display:none; width:100%; margin-top:6px; background:transparent; border:1px dashed var(--border); border-radius:8px; padding:5px; font-size:11px; color:var(--text-3); cursor:pointer; font-family:inherit; transition:all 0.15s; }
+  .tl-expand-btn:hover { border-color:var(--orange); color:var(--orange); }
+  .tl-expand-btn.show { display:block; }
   .seg { min-width: 34px; flex: 1; max-width: 50px; height: 46px; border-radius: 8px; cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 2.5px solid transparent; transition: background 0.2s, transform 0.15s; position: relative; background: var(--gray-3); user-select: none; }
   .seg:active { cursor: grabbing; }
   .seg.active { border-color: var(--black); }
@@ -588,9 +592,10 @@
         <div class="tl-hint">💡 长按色块可拖拽调整顺序</div>
         <div class="tl-with-btns">
           <button class="tl-side-btn tl-minus" onclick="deleteCurSeg()" title="删除当前这一段">－</button>
-          <div class="tl" id="tl"></div>
+          <div class="tl collapsed" id="tl"></div>
           <button class="tl-side-btn tl-plus" onclick="openAppendPopup()" title="在当前段落后面新增一段">＋</button>
         </div>
+        <button class="tl-expand-btn" id="tl-expand-btn" onclick="toggleTlExpand()">展开全部 ▾</button>
       </div>
       <div class="tl-legend">
         <div class="leg"><div class="leg-dot" style="background:var(--gray-3);border:1px solid var(--border)"></div>未拍</div>
@@ -692,6 +697,10 @@ let dragSrcIdx = -1;
 
 // 内联编辑状态：'script' | 'action' | 'tips' | null
 let inlineEditingField = null;
+
+// 色块区是否展开（段数多时默认收起，只显示一行）
+let tlExpanded = false;
+function toggleTlExpand(){ tlExpanded = !tlExpanded; renderBoard(); }
 
 // HTML 转义,防止用户输入破坏 innerHTML
 function escapeHtml(s){
@@ -1451,6 +1460,20 @@ function renderBoard(){
     tl.appendChild(d);
   });
   document.getElementById('board-prog').textContent=`${done}/${segs.length} 完成`;
+  // 色块区展开/收起：段数 ≤ 9 时一行能装下，不显示展开按钮；超出时默认收起
+  const expandBtn = document.getElementById('tl-expand-btn');
+  const COLLAPSE_THRESHOLD = 9;
+  if(segs.length > COLLAPSE_THRESHOLD){
+    expandBtn.classList.add('show');
+    // 当前选中段超过第一行时，自动展开以保证可见
+    const needAutoExpand = state.cur >= COLLAPSE_THRESHOLD;
+    const shouldExpand = tlExpanded || needAutoExpand;
+    tl.classList.toggle('collapsed', !shouldExpand);
+    expandBtn.textContent = shouldExpand ? '收起 ▴' : `展开全部 ${segs.length} 段 ▾`;
+  }else{
+    expandBtn.classList.remove('show');
+    tl.classList.remove('collapsed');
+  }
   const bmTag2=hasBenchmark()?` <span class="benchmark-active-pill">🎯 对标风格</span>`:'';
   // 只更新段数数字，不重建整个标题（避免用户输入中途被打断）
   const inp=document.getElementById('seg-count-input');
@@ -1553,10 +1576,6 @@ function renderBoard(){
 
   document.getElementById('detail-area').innerHTML=`
     <div class="detail-wrap">
-      <div class="d-head">
-        <span class="d-badge" style="background:${color}">${s.badge||''}</span>
-        <div class="d-metas"><span class="d-meta">${s.dur||''}</span><span class="d-meta">${s.scene||''}</span></div>
-      </div>
       ${scriptBlock}
       ${actionBlock}
       ${tipsBlock}
