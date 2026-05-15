@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小意思AI · 编导智能体</title>
+<style>
+  :root {
+    --orange: #E8622A;
+    --orange-light: #fff0eb;
+    --orange-dark: #c44a1a;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --green-dark: #15803d;
+    --black: #111;
+    --gray-1: #f7f7f5;
+    --gray-2: #f0efe9;
+    --gray-3: #e0dfd8;
+    --gray-4: #999;
+    --text: #1a1a1a;
+    --text-2: #555;
+    --text-3: #999;
+    --border: #e8e8e4;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif; background: var(--gray-1); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 20px 0 40px; }
+  .app { width: 100%; max-width: 480px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08); }
+
+  .topbar { background: #fff; border-bottom: 1px solid var(--border); padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 15px; font-weight: 600; color: var(--black); }
+  .logo em { color: var(--orange); font-style: normal; }
+  .step-track { display: flex; gap: 4px; align-items: center; }
+  .step-dot { width: 18px; height: 4px; border-radius: 2px; background: var(--gray-3); transition: background 0.3s; }
+  .step-dot.on { background: var(--orange); }
+  .step-label { font-size: 11px; color: var(--text-3); margin-left: 5px; }
+
+  .screen { display: none; }
+  .screen.show { display: block; }
+  .pad { padding: 22px 18px; }
+
+  .s-tag { display: inline-block; font-size: 10px; font-weight: 600; color: var(--orange); background: var(--orange-light); padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .s-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 5px; letter-spacing: -0.5px; line-height: 1.3; }
+  .s-sub { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 20px; }
+
+  .ind-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .ib { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 12px 6px; text-align: center; cursor: pointer; background: #fff; transition: all 0.15s; }
+  .ib:active { transform: scale(0.97); }
+  .ib.sel { border-color: var(--orange); background: var(--orange-light); }
+  .ib-icon { font-size: 22px; margin-bottom: 5px; display: block; }
+  .ib-name { font-size: 11px; color: var(--text-2); font-weight: 500; }
+  .ib.sel .ib-name { color: var(--orange-dark); }
+  .other-inp { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 11px 14px; font-size: 14px; color: var(--text); margin-bottom: 14px; display: none; outline: none; font-family: inherit; }
+  .other-inp:focus { border-color: var(--orange); }
+
+  .story-parts { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+  .story-part { background: var(--gray-1); border-radius: var(--radius-lg); padding: 14px; border: 1.5px solid transparent; transition: all 0.2s; }
+  .story-part:focus-within { border-color: var(--orange); background: #fffcfb; }
+  .part-num { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; margin-bottom: 6px; }
+  .part-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .part-hint { font-size: 11px; color: var(--text-3); margin-bottom: 8px; line-height: 1.5; }
+  .part-examples { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .part-eg { font-size: 11px; color: var(--orange-dark); background: #fff; border: 1px solid #f0c4b3; padding: 3px 9px; border-radius: 20px; cursor: pointer; transition: all 0.15s; }
+  .part-eg:hover { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .part-textarea { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; resize: none; line-height: 1.6; background: #fff; transition: border 0.2s; }
+  .part-textarea:focus { border-color: var(--orange); }
+  .part-count { font-size: 10px; color: var(--text-3); text-align: right; margin-top: 4px; }
+
+  .prod-label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+  .prod-name-inp { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; background: #fff; }
+  .img-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .img-slot { aspect-ratio: 1; border: 1.5px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; transition: all 0.15s; position: relative; overflow: hidden; }
+  .img-slot:hover { border-color: var(--orange); background: var(--orange-light); }
+  .img-slot.has-img { border-style: solid; border-color: var(--orange); padding: 0; }
+  .img-slot img { width: 100%; height: 100%; object-fit: cover; }
+  .img-slot-add { color: var(--text-3); font-size: 20px; }
+  .img-del { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; border: none; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
+  .spec-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .spec-row { display: flex; gap: 6px; align-items: center; }
+  .spec-inp { flex: 1; border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text); outline: none; font-family: inherit; background: #fff; }
+  .spec-price-inp { width: 100px; border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text); outline: none; font-family: inherit; background: #fff; }
+  .spec-del { width: 24px; height: 24px; border-radius: 50%; background: var(--gray-3); border: none; color: var(--gray-4); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .spec-del:hover { background: #fca5a5; color: #dc2626; }
+  .add-spec-btn { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--orange); cursor: pointer; padding: 6px 0; font-weight: 500; background: none; border: none; font-family: inherit; }
+  .add-spec-btn:disabled { color: var(--gray-4); cursor: not-allowed; }
+  .push-opts { display: flex; flex-direction: column; gap: 6px; }
+  .push-opt { border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.15s; background: #fff; }
+  .push-opt:hover { border-color: var(--orange); background: var(--orange-light); }
+  .push-opt.sel { border-color: var(--orange); background: var(--orange-light); }
+  .push-opt-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .push-opt-price { font-size: 11px; color: var(--orange); font-weight: 500; }
+  .push-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; color: transparent; transition: all 0.2s; flex-shrink: 0; }
+  .push-opt.sel .push-check { background: var(--orange); border-color: var(--orange); color: #fff; }
+
+  .btn-main { width: 100%; padding: 14px; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; background: var(--orange); color: #fff; border: none; transition: all 0.15s; font-family: inherit; }
+  .btn-main:active { transform: scale(0.98); background: var(--orange-dark); }
+  .btn-main:disabled { background: var(--gray-3); color: var(--gray-4); cursor: not-allowed; transform: none; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-back { flex: 1; padding: 13px; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text-2); font-family: inherit; }
+  .skip-link { font-size: 12px; color: var(--text-3); text-align: center; margin-top: 10px; cursor: pointer; }
+
+  .q-opts { display: flex; flex-direction: column; gap: 9px; margin-bottom: 20px; }
+  .qopt { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 13px 14px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.15s; background: #fff; }
+  .qopt.sel { border-color: var(--orange); background: var(--orange-light); }
+  .qopt-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--gray-1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+  .qopt.sel .qopt-icon { background: #ffd9c7; }
+  .qopt-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .qopt-desc { font-size: 11px; color: var(--text-3); margin-top: 2px; line-height: 1.4; }
+  .qopt-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border); margin-left: auto; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .qopt.sel .qopt-check { background: var(--orange); border-color: var(--orange); color: #fff; font-size: 12px; }
+
+  .rec-head { background: var(--orange-light); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; border-left: 4px solid var(--orange); }
+  .rec-label { font-size: 10px; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .rec-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .rec-reason { font-size: 12px; color: var(--text-2); line-height: 1.7; }
+  .tpl-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .tcard { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 13px 14px; cursor: pointer; transition: all 0.15s; background: #fff; }
+  .tcard.top { border-color: var(--orange); background: var(--orange-light); }
+  .tcard.chosen { border-color: var(--black); border-width: 2px; background: var(--gray-1); }
+  .tcard-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .tcard-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .tbadge { font-size: 10px; padding: 2px 9px; border-radius: 20px; font-weight: 600; }
+  .tbadge.r { background: var(--orange); color: #fff; }
+  .tbadge.o { background: var(--gray-2); color: var(--gray-4); }
+  .tcard-desc { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+
+  .loading-screen { padding: 60px 18px; text-align: center; }
+  .loading-icon { font-size: 48px; margin-bottom: 16px; animation: spin 2s linear infinite; display: inline-block; }
+  @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+  .loading-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .loading-sub { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 24px; }
+  .loading-steps { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .loading-step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-3); padding: 10px 14px; background: var(--gray-1); border-radius: var(--radius); }
+  .loading-step.done { color: var(--green); background: var(--green-light); }
+  .loading-step.active { color: var(--text); background: var(--gray-2); font-weight: 500; }
+
+  /* BOARD TOP */
+  .board-top { background: var(--gray-1); border-bottom: 1px solid var(--border); padding: 14px 18px; }
+  .board-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .board-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  /* 可编辑的段数输入框 */
+  .seg-count-input { width: 2.2em; text-align: center; font-size: 13px; font-weight: 700; color: var(--orange); background: var(--orange-light); border: 1.5px solid var(--orange); border-radius: 6px; padding: 1px 4px; outline: none; font-family: inherit; -moz-appearance: textfield; }
+  .seg-count-input::-webkit-outer-spin-button,
+  .seg-count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .board-actions { display: flex; gap: 6px; align-items: center; }
+  .board-prog { font-size: 12px; color: var(--text-3); }
+  .undo-btn { font-size: 11px; color: var(--text-3); background: #fff; border: 1px solid var(--border); padding: 4px 10px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap-3px; transition: all 0.15s; }
+  .undo-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .undo-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* TIMELINE — draggable */
+  .tl-wrap { margin-bottom: 8px; }
+  .tl-hint { font-size: 10px; color: var(--text-3); margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
+  .tl { display: flex; gap: 4px; flex-wrap: wrap; min-height: 48px; }
+  .seg { min-width: 34px; flex: 1; max-width: 50px; height: 46px; border-radius: 8px; cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 2.5px solid transparent; transition: background 0.2s, transform 0.15s; position: relative; background: var(--gray-3); user-select: none; }
+  .seg:active { cursor: grabbing; }
+  .seg.active { border-color: var(--black); }
+  .seg.done { background: var(--green); }
+  .seg.redo { background: #fca5a5; }
+  .seg.dragging { opacity: 0.4; transform: scale(0.95); }
+  .seg.drag-over { border-color: var(--orange); border-style: dashed; transform: scale(1.05); }
+  .seg.insert-target { border-color: var(--orange); background: var(--orange-light); }
+  .seg-n { font-size: 11px; font-weight: 700; color: var(--gray-4); pointer-events: none; }
+  .seg.done .seg-n, .seg.redo .seg-n { color: #fff; }
+  .seg-t { font-size: 9px; color: var(--gray-4); pointer-events: none; }
+  .seg.done .seg-t, .seg.redo .seg-t { color: rgba(255,255,255,0.8); }
+  .seg-ck { position: absolute; top: 2px; right: 3px; font-size: 9px; color: #fff; font-weight: 700; pointer-events: none; }
+  .tl-legend { display: flex; gap: 12px; }
+  .leg { font-size: 10px; color: var(--text-3); display: flex; align-items: center; gap: 4px; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* DETAIL */
+  .detail-wrap { padding: 16px 18px; }
+  .d-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .d-badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; color: #fff; }
+  .d-metas { display: flex; gap: 5px; }
+  .d-meta { font-size: 10px; color: var(--text-2); background: var(--gray-1); border: 1px solid var(--border); padding: 3px 9px; border-radius: 20px; }
+  .d-section { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+
+  /* 三块统一主样式：文案提示/动作指导/思路 视觉等量 */
+  .d-block { background: var(--gray-1); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; border-left: 3px solid var(--orange); position: relative; }
+  .d-block-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .d-block-label { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--orange); background:var(--orange-light); padding:3px 10px; border-radius:10px; letter-spacing:0.02em; }
+  .d-block-edit-btn { font-size:11px; color:var(--text-3); background:#fff; border:1px solid var(--border); padding:4px 10px; border-radius:14px; cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:3px; transition:all 0.15s; }
+  .d-block-edit-btn:hover { color:var(--orange); border-color:var(--orange); }
+  .d-block-text { font-size: 17px; font-weight: 600; color: var(--text); line-height: 1.65; letter-spacing: -0.3px; word-break:break-word; }
+  /* 思路块专用：钩子类型(加粗大字) + 编导理由(小字次要色) */
+  .d-block-hook-type { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.5; letter-spacing: -0.2px; margin-bottom: 6px; }
+  .d-block-hook-reason { font-size: 13px; font-weight: 400; color: var(--text-2); line-height: 1.65; }
+  .d-block-edit-tip { font-size: 11px; color: var(--text-3); margin-top: 6px; padding: 6px 10px; background: var(--orange-light); border-radius: 6px; }
+  .d-block-edit-tip b { color: var(--orange-dark); }
+  .d-script-count { font-size: 10px; color: var(--text-3); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+  /* 编辑态 */
+  .d-block.editing { background:#fff; border-left-color:var(--orange); box-shadow:0 0 0 2px var(--orange-light); }
+  .d-block-textarea { width:100%; border:1.5px solid var(--orange); border-radius:8px; padding:10px 12px; font-size:17px; font-weight:600; color:var(--text); line-height:1.65; outline:none; resize:vertical; font-family:inherit; min-height:70px; box-sizing:border-box; background:#fff; }
+  .d-block-edit-actions { display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
+  .d-block-save, .d-block-cancel { font-size:12px; padding:6px 14px; border-radius:8px; border:none; cursor:pointer; font-family:inherit; font-weight:600; }
+  .d-block-save { background:var(--orange); color:#fff; }
+  .d-block-save:hover { background:var(--orange-dark); }
+  .d-block-cancel { background:#fff; color:var(--text-2); border:1px solid var(--border); }
+
+  /* 旧样式仍保留，删除会破坏粘贴文案的预览(可能用到) */
+  .d-script-wrap { background: var(--gray-1); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; border-left: 3px solid var(--orange); position: relative; }
+  .d-script { font-size: 17px; font-weight: 600; color: var(--text); line-height: 1.65; letter-spacing: -0.3px; }
+  .count-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+  .count-dot.warn { background: #f59e0b; }
+  .restore-btn { position: absolute; top: 8px; right: 8px; font-size: 10px; color: var(--text-3); background: #fff; border: 1px solid var(--border); padding: 2px 8px; border-radius: 10px; cursor: pointer; transition: all 0.15s; }
+  .restore-btn:hover { border-color: var(--orange); color: var(--orange); }
+  /* 旧 tip 颜色保留，向后兼容 */
+  .tip { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .tip-o { background: var(--orange-light); color: var(--orange-dark); }
+  .tip-b { background: #eff6ff; color: #1d4ed8; }
+  .tip-p { background: #f5f3ff; color: #6d28d9; }
+
+  .edit-seg-box { background: var(--gray-1); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; border: 1.5px solid var(--border); }
+  .edit-seg-box.open { border-color: var(--orange); background: #fffcfb; }
+  .edit-seg-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+  .edit-seg-title { font-size: 12px; font-weight: 600; color: var(--text-2); }
+  .edit-seg-arrow { font-size: 12px; color: var(--text-3); transition: transform 0.2s; }
+  .edit-seg-arrow.open { transform: rotate(180deg); }
+  .edit-seg-body { display: none; margin-top: 10px; }
+  .edit-seg-body.show { display: block; }
+  .edit-seg-inp { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; resize: none; line-height: 1.6; background: #fff; margin-bottom: 8px; }
+  .edit-seg-inp:focus { border-color: var(--orange); }
+  .editing-hint { font-size: 11px; color: var(--orange); text-align: center; padding: 4px; display: none; }
+  .edit-seg-btn { width: 100%; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--orange); color: #fff; border: none; font-family: inherit; }
+  .edit-seg-btn:disabled { background: var(--gray-3); color: var(--gray-4); cursor: not-allowed; }
+
+  .d-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+  .d-btn { flex: 1; padding: 11px; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .d-btn-ok { background: var(--green); color: #fff; border: none; }
+  .d-btn-ng { background: #fff; border: 1.5px solid #fca5a5; color: #dc2626; }
+
+  .sum-bar { background: var(--gray-1); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .sum-stats { display: flex; gap: 16px; }
+  .stat-n { font-size: 20px; font-weight: 700; }
+  .stat-l { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+  .export-btn { background: var(--green); color: #fff; border: none; padding: 10px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .export-btn:disabled { background: var(--gray-3); color: var(--gray-4); cursor: not-allowed; }
+
+  /* APPEND */
+  .append-section { border-top: 1px solid var(--border); padding: 14px 18px 20px; display:none; }
+
+  /* 时间轴两侧加减按钮 */
+  .tl-with-btns { display:flex; align-items:center; gap:6px; }
+  .tl-side-btn { flex-shrink:0; width:30px; height:30px; border-radius:50%; border:none; font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; line-height:1; }
+  .tl-minus { background:#fee2e2; color:#dc2626; }
+  .tl-minus:hover { background:#dc2626; color:#fff; }
+  .tl-plus { background:var(--orange-light); color:var(--orange); }
+  .tl-plus:hover { background:var(--orange); color:#fff; }
+
+  /* 追加主题弹窗 */
+  .append-popup-mask { position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:100; }
+  .append-popup { position:fixed; bottom:0; left:0; right:0; background:#fff; border-radius:18px 18px 0 0; padding:18px 16px 32px; z-index:101; max-height:70vh; overflow-y:auto; }
+  .append-popup-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .append-popup-title { font-size:14px; font-weight:700; color:var(--text); }
+  .append-popup-close { background:none; border:none; font-size:18px; color:var(--text-3); cursor:pointer; padding:4px; }
+  .append-popup-opts { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .append-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .append-sub { font-size: 11px; color: var(--text-3); margin-bottom: 10px; line-height: 1.5; }
+
+  /* 插入位置选择 */
+  .insert-pos-wrap { margin-bottom: 10px; }
+  .insert-pos-label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+  .insert-pos-hint { font-size: 11px; color: var(--text-3); margin-bottom: 6px; }
+  .insert-tl { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+  .ins-seg { min-width: 30px; flex: 1; max-width: 44px; height: 38px; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 2px solid transparent; transition: all 0.15s; font-size: 10px; font-weight: 700; color: var(--gray-4); background: var(--gray-3); }
+  .ins-seg.sel { border-color: var(--orange); background: var(--orange-light); color: var(--orange); }
+  .ins-seg.done-seg { background: var(--green); color: #fff; }
+  .ins-seg.done-seg.sel { border-color: var(--orange-dark); }
+  .insert-pos-after { font-size: 10px; color: var(--text-3); text-align: right; }
+
+  .append-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .append-opt { border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 10px; cursor: pointer; font-size: 12px; color: var(--text-2); background: #fff; transition: all 0.15s; text-align: center; font-family: inherit; }
+  .append-opt:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-light); }
+  .append-opt.sel { border-color: var(--orange); color: var(--orange); background: var(--orange-light); font-weight: 600; }
+  .append-custom { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 9px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; margin-bottom: 8px; }
+  .append-custom:focus { border-color: var(--orange); }
+  .appending { font-size: 12px; color: var(--orange); text-align: center; padding: 6px; display: none; }
+  .append-btn { width: 100%; padding: 11px; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; background: var(--orange); color: #fff; border: none; font-family: inherit; }
+  .append-btn:disabled { background: var(--gray-3); color: var(--gray-4); cursor: not-allowed; }
+  .error-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: var(--radius); padding: 12px; margin-bottom: 12px; font-size: 13px; color: #dc2626; }
+  .mode-card { display:flex; align-items:center; gap:14px; border:1.5px solid var(--border); border-radius:var(--radius-lg); padding:16px 14px; cursor:pointer; background:#fff; transition:all 0.15s; }
+  .mode-card:active { transform:scale(0.98); border-color:var(--orange); background:var(--orange-light); }
+  .mode-icon { font-size:28px; flex-shrink:0; }
+  .mode-name { font-size:15px; font-weight:700; color:var(--text); margin-bottom:3px; }
+  .mode-desc { font-size:12px; color:var(--text-2); line-height:1.5; }
+  .mode-arrow { font-size:18px; color:var(--text-3); flex-shrink:0; }
+  .lib-card { border:1.5px solid var(--border); border-radius:var(--radius); padding:14px; background:#fff; cursor:pointer; transition:all 0.15s; }
+  .lib-card:active { border-color:var(--orange); background:var(--orange-light); }
+  .lib-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .lib-card-title { font-size:14px; font-weight:700; color:var(--text); flex:1; }
+  .lib-card-del { font-size:11px; color:var(--text-3); border:none; background:none; cursor:pointer; padding:2px 6px; flex-shrink:0; }
+  .lib-card-meta { font-size:11px; color:var(--text-3); margin-bottom:8px; }
+  .lib-card-preview { font-size:12px; color:var(--text-2); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:10px; }
+  .lib-card-btn { width:100%; padding:9px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; background:var(--orange); color:#fff; border:none; font-family:inherit; }
+  .lib-empty { text-align:center; padding:40px 20px; color:var(--text-3); font-size:13px; }
+
+  /* 对标博主风格参考 */
+  .benchmark-box { background:linear-gradient(135deg, #fff8f4 0%, #fff 100%); border:1.5px solid #f0c4b3; border-radius:var(--radius-lg); margin-top:14px; overflow:hidden; }
+  .benchmark-head { padding:13px 14px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; }
+  .benchmark-head-left { display:flex; align-items:center; gap:8px; }
+  .benchmark-icon { font-size:18px; }
+  .benchmark-title { font-size:13px; font-weight:600; color:var(--text); }
+  .benchmark-badge { font-size:10px; color:var(--orange); background:var(--orange-light); padding:2px 8px; border-radius:10px; font-weight:600; }
+  .benchmark-arrow { font-size:12px; color:var(--text-3); transition:transform 0.2s; }
+  .benchmark-arrow.open { transform:rotate(180deg); }
+  .benchmark-body { padding:0 14px 14px; display:none; }
+  .benchmark-body.show { display:block; }
+  .benchmark-hint { font-size:11px; color:var(--text-3); line-height:1.6; margin-bottom:10px; padding:8px 10px; background:#fff; border-radius:8px; border-left:3px solid var(--orange); }
+  .benchmark-ref { position:relative; margin-bottom:8px; }
+  .benchmark-ref-label { font-size:11px; color:var(--text-2); font-weight:600; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; }
+  .benchmark-ref-count { font-size:10px; color:var(--text-3); font-weight:400; }
+  .benchmark-textarea { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:9px 11px; font-size:12px; color:var(--text); outline:none; font-family:inherit; resize:none; line-height:1.5; background:#fff; transition:border 0.2s; }
+  .benchmark-textarea:focus { border-color:var(--orange); }
+  .benchmark-tags-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; margin-bottom:6px; }
+  .benchmark-tag-label { font-size:11px; color:var(--text-2); font-weight:600; width:100%; margin-bottom:2px; }
+  .benchmark-tag { font-size:11px; padding:5px 10px; border-radius:14px; border:1.5px solid var(--border); background:#fff; color:var(--text-2); cursor:pointer; transition:all 0.15s; font-family:inherit; }
+  .benchmark-tag:hover { border-color:var(--orange); color:var(--orange); }
+  .benchmark-tag.sel { background:var(--orange); color:#fff; border-color:var(--orange); font-weight:600; }
+  .benchmark-clear { font-size:11px; color:var(--text-3); cursor:pointer; text-align:right; padding:6px 0 0; }
+  .benchmark-clear:hover { color:var(--orange); }
+  .benchmark-active-pill { display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--green-dark); background:var(--green-light); padding:2px 8px; border-radius:10px; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="logo"><em>小意思AI</em> · 编导智能体</div>
+    <div class="step-track">
+      <div class="step-dot on" id="p0"></div>
+      <div class="step-dot" id="p1"></div>
+      <div class="step-dot" id="p2"></div>
+      <div class="step-dot" id="p3"></div>
+      <div class="step-dot" id="p4"></div>
+      <span class="step-label" id="step-label">1/5</span>
+    </div>
+  </div>
+
+  <!-- S0 入口 -->
+  <div class="screen show" id="s0">
+    <div class="pad" style="padding-top:32px">
+      <div class="s-tag">开始</div>
+      <div class="s-title">今天怎么用？</div>
+      <div class="s-sub" style="margin-bottom:24px">选一个方式开始</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="mode-card" onclick="go(1)">
+          <div class="mode-icon">✨</div>
+          <div style="flex:1">
+            <div class="mode-name">AI帮我写脚本</div>
+            <div class="mode-desc">告诉AI你的行业和产品，自动生成完整拍摄脚本</div>
+          </div>
+          <div class="mode-arrow">→</div>
+        </div>
+        <div class="mode-card" onclick="go('paste')">
+          <div class="mode-icon">📋</div>
+          <div style="flex:1">
+            <div class="mode-name">我有文案，帮我分段</div>
+            <div class="mode-desc">粘贴你的文案，AI自动拆分段落并配动作指导和编导思路</div>
+          </div>
+          <div class="mode-arrow">→</div>
+        </div>
+        <div class="mode-card" onclick="go('library')">
+          <div class="mode-icon">📁</div>
+          <div style="flex:1">
+            <div class="mode-name">我的文案库</div>
+            <div class="mode-desc">查看和选择之前保存的脚本</div>
+          </div>
+          <div class="mode-arrow">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S1 -->
+  <div class="screen" id="s1">
+    <div class="pad">
+      <div class="s-tag">第一步</div>
+      <div class="s-title">你是做什么行业的？</div>
+      <div class="s-sub">选择你的行业，AI为你生成专属拍摄脚本</div>
+      <div class="ind-grid">
+        <div class="ib" onclick="pickInd('装修',this)"><span class="ib-icon">🔨</span><div class="ib-name">装修</div></div>
+        <div class="ib" onclick="pickInd('餐饮',this)"><span class="ib-icon">🍜</span><div class="ib-name">餐饮</div></div>
+        <div class="ib" onclick="pickInd('美业',this)"><span class="ib-icon">💇</span><div class="ib-name">美业</div></div>
+        <div class="ib" onclick="pickInd('教培',this)"><span class="ib-icon">📚</span><div class="ib-name">教培</div></div>
+        <div class="ib" onclick="pickInd('服装',this)"><span class="ib-icon">👗</span><div class="ib-name">服装</div></div>
+        <div class="ib" onclick="pickInd('旅游',this)"><span class="ib-icon">🏔️</span><div class="ib-name">旅游</div></div>
+        <div class="ib" onclick="pickInd('卖车',this)"><span class="ib-icon">🚗</span><div class="ib-name">卖车</div></div>
+        <div class="ib" onclick="pickInd('律所',this)"><span class="ib-icon">⚖️</span><div class="ib-name">律所</div></div>
+        <div class="ib" onclick="pickInd('other',this)"><span class="ib-icon">➕</span><div class="ib-name">其他</div></div>
+      </div>
+      <input class="other-inp" id="other-inp" placeholder="输入你的行业，比如：家具、母婴、宠物..." oninput="otherInput(this.value)"/>
+      <button class="btn-main" id="s1-next" disabled onclick="go(2)">下一步 →</button>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="screen" id="s2">
+    <div class="pad">
+      <div class="s-tag">第二步 · 个性化定制</div>
+      <div class="s-title">告诉AI你的情况</div>
+      <div class="s-sub">填得越真实，生成的脚本越像你说的话，不像广告</div>
+      <div class="story-parts">
+        <div class="story-part">
+          <div class="part-num">1</div>
+          <div class="part-title">介绍下你自己的情况</div>
+          <div class="part-hint">做这行多久了？为什么想做这个？说说你的故事</div>
+          <div class="part-examples">
+            <span class="part-eg" onclick="fillEg('p1','我做装修18年了，当年自己装修被坑，所以决定自己做，坚持不偷工减料')">我做装修18年</span>
+            <span class="part-eg" onclick="fillEg('p1','土生土长在这里30年，认识每个村民，带你看真实的家乡不是景点')">土生土长带你看家乡</span>
+            <span class="part-eg" onclick="fillEg('p1','学厨20年，这个配方是我妈留下来的，从没改过一克')">配方从没改过</span>
+          </div>
+          <textarea class="part-textarea" id="p1" rows="3" placeholder="比如：做装修18年了，当年因为自己装修被坑，所以决定自己做..." oninput="updateCount('p1','c1',150)" maxlength="150"></textarea>
+          <div class="part-count" id="c1">0/150字</div>
+        </div>
+        <div class="story-part">
+          <div class="part-num">2</div>
+          <div class="part-title">以前卖过什么？什么最受欢迎？</div>
+          <div class="part-hint">什么人在买、为什么买、有没有印象深刻的客户故事</div>
+          <div class="part-examples">
+            <span class="part-eg" onclick="fillEg('p2','做过800多个家庭，改善型客户最多，有个客户验收时当场哭了')">客户哭了</span>
+            <span class="part-eg" onclick="fillEg('p2','带过上千个游客，有家人连续5年来，带着孩子来了')">回头客故事</span>
+            <span class="part-eg" onclick="fillEg('p2','老顾客从高中吃到结婚，现在带着孩子来了，10多年了')">老顾客情缘</span>
+          </div>
+          <textarea class="part-textarea" id="p2" rows="3" placeholder="比如：做过800多个家庭，最多是改善型客户..." oninput="updateCount('p2','c2',150)" maxlength="150"></textarea>
+          <div class="part-count" id="c2">0/150字</div>
+        </div>
+        <div class="story-part">
+          <div class="part-num">3</div>
+          <div class="part-title">现在想推什么产品？</div>
+          <div class="part-hint">填产品名称、上传图片、规格价格、选主推</div>
+          <div class="prod-label">产品名称</div>
+          <input class="prod-name-inp" id="prod-name" placeholder="比如：全屋装修套餐、锦绣天府号..." oninput="state.prodName=this.value" style="margin-bottom:10px"/>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div class="prod-label" style="margin:0">产品图片 <span style="color:var(--text-3);font-weight:400">（最多3张）</span></div>
+            <div id="vision-hint" style="font-size:10px;color:var(--text-3)">让AI看到你的产品</div>
+          </div>
+          <div class="img-grid" id="img-grid"></div>
+          <input type="file" id="img-input" accept="image/*" multiple style="display:none" onchange="handleImgUpload(event)"/>
+          <div class="prod-label" style="margin-top:12px">规格和价格 <span style="color:var(--text-3);font-weight:400">（最多4个）</span></div>
+          <div class="spec-list" id="spec-list"></div>
+          <button class="add-spec-btn" id="add-spec-btn" onclick="addSpec()">＋ 添加规格</button>
+          <div id="push-section" style="display:none">
+            <div class="prod-label" style="margin-top:10px">这条视频主推哪个规格？</div>
+            <div class="push-opts" id="push-opts"></div>
+          </div>
+          <div class="prod-label" style="margin-top:12px">产品详细介绍</div>
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;line-height:1.5">写越详细AI生成的台词越准确，可以把行程单、房间介绍直接粘贴进来</div>
+          <textarea class="part-textarea" id="p3-detail" rows="8" placeholder="详细说说你的产品——&#10;1. 产品里面是什么样？有哪些特色？&#10;2. 包含什么内容或活动？&#10;3. 为什么值这个价？和别人的区别？&#10;4. 适合什么人来体验？&#10;&#10;（可以把行程单、房间介绍直接粘贴进来）" oninput="updateCount('p3-detail','c3',3000)" maxlength="3000"></textarea>
+          <div class="part-count" id="c3">0/3000字</div>
+        </div>
+      </div>
+
+      <!-- 对标博主风格参考（可选） -->
+      <div class="benchmark-box" id="benchmark-box">
+        <div class="benchmark-head" onclick="toggleBenchmark()">
+          <div class="benchmark-head-left">
+            <span class="benchmark-icon">🎯</span>
+            <span class="benchmark-title">想模仿某个博主的风格？</span>
+            <span class="benchmark-badge">选填</span>
+          </div>
+          <span class="benchmark-arrow" id="bm-arrow">▾</span>
+        </div>
+        <div class="benchmark-body" id="benchmark-body">
+          <div class="benchmark-hint">
+            📌 找到你想对标的博主，复制 2-3 条 ta 的爆款文案粘贴进来。<br>
+            AI 会学习 ta 的<b>说话风格和节奏</b>，但内容会用你自己的产品和故事，<b>不会照抄</b>。
+          </div>
+
+          <div class="benchmark-ref">
+            <div class="benchmark-ref-label">
+              <span>参考文案 1</span>
+              <span class="benchmark-ref-count" id="bm-c0">0字</span>
+            </div>
+            <textarea class="benchmark-textarea" id="bm-ref-0" rows="3"
+              placeholder="粘贴对标博主的一条文案，比如：&#10;你知道为什么我从来不接低价单吗？因为..." 
+              oninput="updateBenchmark(0,this.value)" maxlength="500"></textarea>
+          </div>
+
+          <div class="benchmark-ref">
+            <div class="benchmark-ref-label">
+              <span>参考文案 2</span>
+              <span class="benchmark-ref-count" id="bm-c1">0字</span>
+            </div>
+            <textarea class="benchmark-textarea" id="bm-ref-1" rows="3"
+              placeholder="再粘贴一条（推荐 2-3 条，风格会更准）" 
+              oninput="updateBenchmark(1,this.value)" maxlength="500"></textarea>
+          </div>
+
+          <div class="benchmark-ref">
+            <div class="benchmark-ref-label">
+              <span>参考文案 3 <span style="color:var(--text-3);font-weight:400">（选填）</span></span>
+              <span class="benchmark-ref-count" id="bm-c2">0字</span>
+            </div>
+            <textarea class="benchmark-textarea" id="bm-ref-2" rows="3"
+              placeholder="还有的话再粘一条" 
+              oninput="updateBenchmark(2,this.value)" maxlength="500"></textarea>
+          </div>
+
+          <div class="benchmark-tags-row">
+            <div class="benchmark-tag-label">博主性别（帮 AI 更准）</div>
+            <button class="benchmark-tag" data-bm-gender="女" onclick="pickBmGender(this,'女')">女博主</button>
+            <button class="benchmark-tag" data-bm-gender="男" onclick="pickBmGender(this,'男')">男博主</button>
+            <button class="benchmark-tag" data-bm-gender="" onclick="pickBmGender(this,'')">不指定</button>
+          </div>
+
+          <div class="benchmark-tags-row">
+            <div class="benchmark-tag-label">博主调性</div>
+            <button class="benchmark-tag" data-bm-vibe="年轻活泼" onclick="pickBmVibe(this,'年轻活泼')">年轻活泼</button>
+            <button class="benchmark-tag" data-bm-vibe="沉稳专业" onclick="pickBmVibe(this,'沉稳专业')">沉稳专业</button>
+            <button class="benchmark-tag" data-bm-vibe="接地气" onclick="pickBmVibe(this,'接地气')">接地气</button>
+            <button class="benchmark-tag" data-bm-vibe="犀利吐槽" onclick="pickBmVibe(this,'犀利吐槽')">犀利吐槽</button>
+            <button class="benchmark-tag" data-bm-vibe="温柔治愈" onclick="pickBmVibe(this,'温柔治愈')">温柔治愈</button>
+            <button class="benchmark-tag" data-bm-vibe="高冷专家" onclick="pickBmVibe(this,'高冷专家')">高冷专家</button>
+          </div>
+
+          <div class="benchmark-clear" onclick="clearBenchmark()">清空所有参考 ×</div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn-back" onclick="go(1)">← 上一步</button>
+        <button class="btn-main" onclick="go(3)" style="flex:2">下一步 →</button>
+      </div>
+      <div class="skip-link" onclick="clearStory();go(3)">跳过，使用通用模版 →</div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="screen" id="s3">
+    <div class="pad">
+      <div class="s-tag" id="q-tag">问题 1 / 2</div>
+      <div class="s-title" id="q-title">账号现在有多少粉丝？</div>
+      <div class="s-sub" id="q-sub">粉丝量决定你最需要什么类型的内容</div>
+      <div class="q-opts" id="q-opts"></div>
+      <div class="btn-row">
+        <button class="btn-back" id="q-back" onclick="qBack()">← 上一步</button>
+        <button class="btn-main" id="q-next" disabled onclick="qNext()" style="flex:2">下一步 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4 -->
+  <div class="screen" id="s4">
+    <div class="pad">
+      <div class="rec-head">
+        <div class="rec-label">✦ AI推荐结果</div>
+        <div class="rec-title" id="rec-title">最适合你的是「钩子型」</div>
+        <div class="rec-reason" id="rec-reason"></div>
+      </div>
+      <div class="s-sub" style="margin-bottom:12px">也可以选其他类型</div>
+      <div class="tpl-list" id="tpl-list"></div>
+      <button class="btn-main" id="s4-next" onclick="startGenerate()">✨ AI生成完整脚本</button>
+      <div style="text-align:center;margin-top:12px">
+        <span style="font-size:12px;color:var(--text-3);cursor:pointer" onclick="go(3)">← 重新选择</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5 loading -->
+  <div class="screen" id="s5-loading">
+    <div class="loading-screen">
+      <div class="loading-icon">🎬</div>
+      <div class="loading-title">AI正在为你定制脚本</div>
+      <div class="loading-sub" id="loading-sub">根据你的故事和产品信息<br>生成完整专属脚本...</div>
+      <div class="loading-steps">
+        <div class="loading-step active" id="ls0"><span>📖</span>读取你的产品信息...</div>
+        <div class="loading-step" id="ls1"><span>🖼️</span>分析产品图片...</div>
+        <div class="loading-step" id="ls2"><span>✍️</span>生成每段台词和动作指导...</div>
+        <div class="loading-step" id="ls3"><span>✅</span>脚本生成完成！</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5 看板 -->
+  <div class="screen" id="s5">
+    <div class="board-top">
+      <div class="board-meta">
+        <div class="board-title" id="board-title">装修 · 钩子型</div>
+        <div class="board-actions">
+          <button class="undo-btn" id="undo-btn" onclick="doUndo()" disabled>↩ 撤销</button>
+          <span class="board-prog" id="board-prog">0 完成</span>
+        </div>
+      </div>
+      <div class="tl-wrap">
+        <div class="tl-hint">💡 长按色块可拖拽调整顺序</div>
+        <div class="tl-with-btns">
+          <button class="tl-side-btn tl-minus" onclick="deleteCurSeg()" title="删除当前这一段">－</button>
+          <div class="tl" id="tl"></div>
+          <button class="tl-side-btn tl-plus" onclick="openAppendPopup()" title="在当前段落后面新增一段">＋</button>
+        </div>
+      </div>
+      <div class="tl-legend">
+        <div class="leg"><div class="leg-dot" style="background:var(--gray-3);border:1px solid var(--border)"></div>未拍</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>已完成</div>
+        <div class="leg"><div class="leg-dot" style="background:#fca5a5"></div>需补拍</div>
+      </div>
+    </div>
+    <div id="detail-area"></div>
+
+    <!-- 追加主题弹窗 -->
+    <div class="append-popup-mask" id="append-popup-mask" onclick="closeAppendPopup()" style="display:none"></div>
+    <div class="append-popup" id="append-popup" style="display:none">
+      <div class="append-popup-head">
+        <span class="append-popup-title">➕ 在第<span id="popup-after-idx">?</span>段后插入</span>
+        <button class="append-popup-close" onclick="closeAppendPopup()">✕</button>
+      </div>
+      <div class="append-popup-opts">
+        <button class="append-opt" onclick="selectAppend(this,'产品亮点')">✨ 产品亮点</button>
+        <button class="append-opt" onclick="selectAppend(this,'行程细节')">🗺 行程细节</button>
+        <button class="append-opt" onclick="selectAppend(this,'客户故事')">💬 客户故事</button>
+        <button class="append-opt" onclick="selectAppend(this,'价格说明')">💰 价格说明</button>
+        <button class="append-opt" onclick="selectAppend(this,'文化特色')">🏮 文化特色</button>
+        <button class="append-opt" onclick="selectAppend(this,'自定义')">✏️ 自定义</button>
+      </div>
+      <input class="append-custom" id="append-custom" placeholder="描述要追加的内容..." style="display:none"/>
+      <div class="appending" id="appending" style="display:none">⏳ AI正在生成段落...</div>
+      <button class="append-btn" id="append-btn" onclick="doAppend()" disabled>生成并插入 →</button>
+    </div>
+  </div>
+
+  <!-- S paste 粘贴文案 -->
+  <div class="screen" id="spaste">
+    <div class="pad">
+      <div class="s-tag">我有文案</div>
+      <div class="s-title">粘贴你的文案</div>
+      <div class="s-sub">AI会自动分成几段，每段配上动作指导和编导思路</div>
+      <div class="story-part" style="margin-bottom:14px">
+        <div class="part-title" style="margin-bottom:6px">文案内容</div>
+        <textarea class="part-textarea" id="paste-text" rows="10" placeholder="把你写好的文案粘贴到这里...&#10;&#10;比如：&#10;你知道为什么很多人装修完都后悔吗？因为没找对人。我做装修18年，服务过800多个家庭，今天给大家看看我们的实景案例..."></textarea>
+        <div class="part-count" id="paste-count">0字</div>
+      </div>
+      <div class="story-part" style="margin-bottom:20px">
+        <div class="part-title" style="margin-bottom:4px">视频标题（选填）</div>
+        <div class="part-hint">用于保存到文案库时的名称</div>
+        <input class="prod-name-inp" id="paste-title" placeholder="比如：装修避坑指南 第1条" style="margin-top:4px"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn-back" onclick="go(0)">← 返回</button>
+        <button class="btn-main" id="paste-next" onclick="startPasteGenerate()" style="flex:2">✨ AI自动分段 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S paste loading -->
+  <div class="screen" id="spaste-loading">
+    <div class="loading-screen">
+      <div class="loading-icon">✂️</div>
+      <div class="loading-title">AI正在分析你的文案</div>
+      <div class="loading-sub">拆分段落，配上动作指导和编导思路...</div>
+      <div class="loading-steps">
+        <div class="loading-step active" id="pls0"><span>📖</span>读取文案内容...</div>
+        <div class="loading-step" id="pls1"><span>✂️</span>智能拆分段落...</div>
+        <div class="loading-step" id="pls2"><span>🎬</span>生成动作指导和编导思路...</div>
+        <div class="loading-step" id="pls3"><span>✅</span>完成！</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S library 文案库 -->
+  <div class="screen" id="slibrary">
+    <div class="pad">
+      <div class="s-tag">文案库</div>
+      <div class="s-title">我的脚本库</div>
+      <div class="s-sub">选择一条脚本继续拍摄</div>
+      <div id="library-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px"></div>
+      <button class="btn-back" onclick="go(0)">← 返回首页</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const state = {
+  ind:'', p1:'', p2:'',
+  prodName:'', prodImages:[], specs:[], mainSpec:null, p3detail:'',
+  benchmarkRefs:['','',''], benchmarkVibe:'', benchmarkGender:'',
+  fans:null, goal:null, tpl:'', cur:0, script:[]
+};
+const segStates = [];
+const originalScript = []; // 复原用
+const undoStack = []; // 撤销栈
+const segColors = ['#E8622A','#dc6030','#2563EB','#7C3AED','#059669','#0891b2','#7c2d12','#1e40af','#4d7c0f','#9333ea','#b45309','#0f766e','#be185d','#0369a1','#15803d','#7e22ce','#b91c1c','#0284c7','#166534','#6d28d9'];
+
+let openEditIdx = -1;
+const editFeedback = {};
+let insertAfterIdx = -1; // -1 = 追加到最后
+let appendTopic = '';
+let dragSrcIdx = -1;
+
+// 内联编辑状态：'script' | 'action' | 'tips' | null
+let inlineEditingField = null;
+
+// HTML 转义,防止用户输入破坏 innerHTML
+function escapeHtml(s){
+  if(s==null)return '';
+  return String(s).replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function startInlineEdit(field){
+  inlineEditingField = field;
+  renderBoard();
+  // 渲染后自动聚焦到 textarea
+  setTimeout(()=>{
+    const el=document.getElementById('inline-edit-'+field);
+    if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}
+  },50);
+}
+
+function cancelInlineEdit(){
+  inlineEditingField = null;
+  renderBoard();
+}
+
+function saveInlineEdit(field){
+  const el=document.getElementById('inline-edit-'+field);
+  if(!el){cancelInlineEdit();return;}
+  const val=el.value.trim();
+  pushUndo(`手动编辑第${state.cur+1}段的${field==='script'?'文案':field==='action'?'动作':'思路'}`);
+  const s=state.script[state.cur];
+  if(field==='script'){
+    s.script=val;
+  }else if(field==='action'){
+    s.action=val;
+  }else if(field==='tips'){
+    // 痛点对应 tips[0]，保持数组其余项
+    if(!Array.isArray(s.tips))s.tips=[];
+    s.tips[0]=val;
+  }
+  inlineEditingField=null;
+  renderBoard();
+}
+
+window.onload = () => {
+  addSpec(); renderImgs();
+  // 异步检测后端视觉能力，不阻塞渲染
+  checkVisionEnabled().then(enabled=>{
+    const hint=document.getElementById('vision-hint');
+    if(hint){
+      if(enabled){
+        hint.textContent='✓ AI可识别产品';
+        hint.style.color='var(--green)';
+      }else{
+        hint.textContent='图片仅作参考';
+        hint.title='后端未开启视觉模型，图片不会被AI识别';
+      }
+    }
+  });
+};
+
+// ===== GO OVERRIDE =====
+(function(){
+  const originalPickInd = typeof pickInd !== 'undefined' ? pickInd : null;
+  const origGo = function(n){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+    const el=document.getElementById('s'+n);if(el)el.classList.add('show');
+    const m={1:1,2:2,3:3,4:4,'5-loading':5,5:5};updatePills(m[n]||n);
+    if(n===3)initQ();if(n===4)showRec();
+  };
+  window.goScreen = function(n){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+    if(n==='paste'){document.getElementById('spaste').classList.add('show');updatePills(1);return;}
+    if(n==='paste-loading'){document.getElementById('spaste-loading').classList.add('show');updatePills(1);return;}
+    if(n==='library'){document.getElementById('slibrary').classList.add('show');renderLibrary();updatePills(1);return;}
+    if(n===0){document.getElementById('s0').classList.add('show');updatePills(1);return;}
+    origGo(n);
+  };
+})();
+
+// patch go
+window.go = window.goScreen;
+
+// ===== PASTE FEATURE =====
+document.addEventListener('input',function(e){
+  if(e.target.id==='paste-text'){
+    var cnt=document.getElementById('paste-count');
+    if(cnt)cnt.textContent=e.target.value.length+'字';
+  }
+});
+
+async function startPasteGenerate(){
+  var text=(document.getElementById('paste-text').value||'').trim();
+  if(!text){alert('请先粘贴你的文案');return;}
+  var title=(document.getElementById('paste-title').value||'').trim()||('文案_'+new Date().toLocaleDateString('zh'));
+
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById('spaste-loading').classList.add('show');
+
+  var steps=['pls0','pls1','pls2','pls3'];
+  for(var i=0;i<steps.length-1;i++){
+    await delay(800);
+    document.getElementById(steps[i]).className='loading-step done';
+    document.getElementById(steps[i+1]).className='loading-step active';
+  }
+
+  try{
+    var prompt='你是专业短视频编导，把下面这段文案拆分成适合真人出镜短视频的分段脚本。\n\n文案内容：\n'+text+'\n\n要求：\n1. 根据内容自然拆分成3-10段，每段台词控制在25字以内，保留原文意思\n2. 每段配上：动作指导（拍摄时怎么做，2句内）、tips数组3项\n3. 给每段起一个简短的名称（2-4字），标注时长（5-8秒）和场景建议\n\n【tips 字段说明 - 重要】\n- tips[0] = 这段的「编导思路」，格式必须是【钩子类型】｜【编导理由】，用全角竖线 ｜ 分隔\n  开头段用：反常识钩子/提问钩子/数据钩子/反差钩子\n  中段用：场景代入/情绪共鸣/故事代入/细节信任/颠覆认知\n  结尾段用：稀缺紧迫/价值反转/行动召唤\n  编导理由要写清"这段为什么这么写"，15-30字\n  示例：「反常识钩子｜用问句立专家人设，激发用户好奇心」\n- tips[1] = 拍摄要点1（构图/动作建议，10-20字）\n- tips[2] = 拍摄要点2（表情/节奏建议，10-20字）\n⚠️ 不同段落用不同钩子类型，避免雷同。\n\n严格JSON：{"title":"'+title+'","segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}';
+
+    var respText, parsed;
+    try{
+      const r = await callAPI(prompt, 4000);
+      respText = r.text;
+      parsed = r.parsed;
+    }catch(e){
+      throw e;
+    }
+    var segs = parsed.segments;
+
+    saveToLibrary({title:title, script:segs, createdAt:Date.now(), source:'paste'});
+
+    state.script=segs;
+    state.ind=title;
+    state.tpl='自有文案';
+    segStates.length=0;segs.forEach(function(){segStates.push('pending');});
+    originalScript.length=0;segs.forEach(function(s){originalScript.push(JSON.parse(JSON.stringify(s)));});
+    state.cur=0;undoStack.length=0;
+    document.getElementById('pls3').className='loading-step done';
+    await delay(200);
+    initBoard();go(5);
+  }catch(e){
+    console.error(e);
+    alert('分段失败：'+(e&&e.message?e.message:'请检查文案内容后重试'));
+    go('paste');
+  }
+}
+
+// ===== 文案库 =====
+function saveToLibrary(item){
+  // 安全清洗：脚本里不该有图片字段，但兜底过滤一下
+  if(item.script){
+    item.script = item.script.map(s=>{
+      const cleaned = {...s};
+      delete cleaned.image;
+      delete cleaned.images;
+      return cleaned;
+    });
+  }
+  try{
+    var lib=JSON.parse(localStorage.getItem('biandao_library')||'[]');
+    lib.unshift(item);
+    if(lib.length>20)lib.pop();
+    localStorage.setItem('biandao_library',JSON.stringify(lib));
+  }catch(e){
+    // localStorage 配额溢出
+    if(e.name==='QuotaExceededError'||e.code===22){
+      try{
+        var lib=JSON.parse(localStorage.getItem('biandao_library')||'[]');
+        // 删除最旧的5条，重试
+        lib=lib.slice(0,Math.max(0,lib.length-5));
+        lib.unshift(item);
+        localStorage.setItem('biandao_library',JSON.stringify(lib));
+        console.warn('文案库已满，已自动清理最旧的几条');
+      }catch(e2){
+        console.error('文案库保存失败',e2);
+      }
+    }else{
+      console.error('文案库保存异常',e);
+    }
+  }
+}
+
+function renderLibrary(){
+  var lib=JSON.parse(localStorage.getItem('biandao_library')||'[]');
+  var el=document.getElementById('library-list');
+  if(!lib.length){
+    el.innerHTML='<div class="lib-empty">📭 还没有保存的脚本<br>生成或分段后会自动保存到这里</div>';
+    return;
+  }
+  el.innerHTML='';
+  lib.forEach(function(item,idx){
+    var date=new Date(item.createdAt).toLocaleDateString('zh');
+    var preview=item.script.map(function(s){return s.script;}).join(' / ');
+    var bmBadge=item.benchmark?'<span class="benchmark-active-pill" style="margin-left:6px">🎯 对标</span>':'';
+    var d=document.createElement('div');
+    d.className='lib-card';
+    d.innerHTML='<div class="lib-card-top"><div class="lib-card-title">'+item.title+bmBadge+'</div><button class="lib-card-del" onclick="deleteFromLibrary('+idx+',event)">删除</button></div><div class="lib-card-meta">'+date+' · '+item.script.length+'段 · '+(item.source==='paste'?'自有文案':'AI生成')+'</div><div class="lib-card-preview">'+preview+'</div><button class="lib-card-btn" onclick="loadFromLibrary('+idx+')">选这条去拍摄 →</button>';
+    el.appendChild(d);
+  });
+}
+
+function deleteFromLibrary(idx,e){
+  e.stopPropagation();
+  if(!confirm('确定删除这条脚本吗？'))return;
+  var lib=JSON.parse(localStorage.getItem('biandao_library')||'[]');
+  lib.splice(idx,1);
+  localStorage.setItem('biandao_library',JSON.stringify(lib));
+  renderLibrary();
+}
+
+function loadFromLibrary(idx){
+  var lib=JSON.parse(localStorage.getItem('biandao_library')||'[]');
+  var item=lib[idx];if(!item)return;
+  state.script=JSON.parse(JSON.stringify(item.script));
+  state.ind=item.title;state.tpl=item.source==='paste'?'自有文案':'AI生成';
+  // 恢复对标信息（如果有）
+  if(item.benchmark){
+    state.benchmarkRefs=item.benchmark.refs||['','',''];
+    state.benchmarkVibe=item.benchmark.vibe||'';
+    state.benchmarkGender=item.benchmark.gender||'';
+  }else{
+    state.benchmarkRefs=['','',''];state.benchmarkVibe='';state.benchmarkGender='';
+  }
+  segStates.length=0;item.script.forEach(function(){segStates.push('pending');});
+  originalScript.length=0;item.script.forEach(function(s){originalScript.push(JSON.parse(JSON.stringify(s)));});
+  state.cur=0;undoStack.length=0;
+  initBoard();go(5);
+}
+
+// ===== IMAGES =====
+function renderImgs(){
+  const g=document.getElementById('img-grid');g.innerHTML='';
+  state.prodImages.forEach((img,i)=>{
+    const s=document.createElement('div');s.className='img-slot has-img';
+    s.innerHTML=`<button class="img-del" onclick="removeImg(${i})">×</button><img src="${img}"/>`;g.appendChild(s);
+  });
+  if(state.prodImages.length<3){
+    const a=document.createElement('div');a.className='img-slot';a.innerHTML='<span class="img-slot-add">+</span>';
+    a.onclick=()=>document.getElementById('img-input').click();g.appendChild(a);
+  }
+}
+function handleImgUpload(e){
+  Array.from(e.target.files).slice(0,3-state.prodImages.length).forEach(f=>{
+    const r=new FileReader();r.onload=ev=>{state.prodImages.push(ev.target.result);renderImgs();};r.readAsDataURL(f);
+  });e.target.value='';
+}
+function removeImg(i){state.prodImages.splice(i,1);renderImgs();}
+
+// ===== SPECS =====
+function addSpec(){if(state.specs.length>=4)return;state.specs.push({id:Date.now()+Math.random(),name:'',price:''});renderSpecs();}
+function removeSpec(id){state.specs=state.specs.filter(s=>s.id!==id);if(state.mainSpec===id)state.mainSpec=null;renderSpecs();}
+function renderSpecs(){
+  const l=document.getElementById('spec-list');l.innerHTML='';
+  state.specs.forEach(spec=>{
+    const r=document.createElement('div');r.className='spec-row';
+    r.innerHTML=`<input class="spec-inp" placeholder="规格名" value="${spec.name}" oninput="updateSpec(${spec.id},'name',this.value)"/>
+      <input class="spec-price-inp" placeholder="价格" value="${spec.price}" oninput="updateSpec(${spec.id},'price',this.value)"/>
+      ${state.specs.length>1?`<button class="spec-del" onclick="removeSpec(${spec.id})">×</button>`:'<div style="width:24px"></div>'}`;
+    l.appendChild(r);
+  });
+  document.getElementById('add-spec-btn').disabled=state.specs.length>=4;renderPushOpts();
+}
+function updateSpec(id,f,v){const s=state.specs.find(s=>s.id===id);if(s)s[f]=v;renderPushOpts();}
+function renderPushOpts(){
+  const vs=state.specs.filter(s=>s.price);
+  const sec=document.getElementById('push-section');const opts=document.getElementById('push-opts');
+  if(!vs.length){sec.style.display='none';return;}
+  sec.style.display='block';opts.innerHTML='';
+  vs.forEach(spec=>{
+    const d=document.createElement('div');d.className='push-opt'+(state.mainSpec===spec.id?' sel':'');
+    d.innerHTML=`<div><div class="push-opt-name">${spec.name||'未命名'}</div><div class="push-opt-price">${spec.price}</div></div><div class="push-check">✓</div>`;
+    d.onclick=()=>{state.mainSpec=spec.id;renderPushOpts();};opts.appendChild(d);
+  });
+  if(!state.mainSpec&&vs.length)state.mainSpec=vs[0].id,renderPushOpts();
+}
+function getMainSpec(){
+  if(!state.mainSpec)return'';
+  const s=state.specs.find(s=>s.id===state.mainSpec);if(!s)return'';
+  return(s.name||state.prodName)?`${s.name||state.prodName} ${s.price}`:s.price;
+}
+
+// ===== NAV =====
+const qs=[
+  {tag:'问题 1 / 2',title:'账号现在有多少粉丝？',sub:'粉丝量决定你最需要什么类型的内容',
+   opts:[{icon:'👤',name:'还没开始 / 1000粉以内',desc:'账号刚起步，需要快速涨粉'},{icon:'👥',name:'1000 - 1万粉',desc:'有一定基础，想建立专业形象'},{icon:'⭐',name:'1万粉以上',desc:'粉丝够了，想直接转化引流'}]},
+  {tag:'问题 2 / 2',title:'这条视频最想达成什么？',sub:'不同目的对应不同的脚本结构',
+   opts:[{icon:'❤️',name:'涨粉 / 提升知名度',desc:'让更多人认识我、关注我'},{icon:'💬',name:'引流加微信 / 到店',desc:'让感兴趣的人主动联系我'},{icon:'🛒',name:'直接卖货 / 成交',desc:'这条视频要直接带来订单'}]}
+];
+const recMap={
+  '00':{title:'钩子型',reason:'账号刚起步+目标涨粉，钩子型前3秒抓住路人，完播率高。',order:['钩子型','痛点型','信任型','转化型']},
+  '01':{title:'痛点型',reason:'账号刚起步+引流，痛点型直击客户顾虑，有需求的人主动联系你。',order:['痛点型','钩子型','信任型','转化型']},
+  '02':{title:'钩子型',reason:'刚起步建议先积累信任，钩子型+结尾引导效果更好。',order:['钩子型','痛点型','信任型','转化型']},
+  '10':{title:'信任型',reason:'有基础粉丝+涨粉，信任型真实案例让老粉转发，口碑裂变最稳。',order:['信任型','痛点型','钩子型','转化型']},
+  '11':{title:'痛点型',reason:'有基础粉丝+引流，痛点型加微信转化率是普通内容的2-3倍。',order:['痛点型','信任型','转化型','钩子型']},
+  '12':{title:'信任型',reason:'有粉丝+卖货，信任型用案例打消顾虑，让观众放心下单。',order:['信任型','转化型','痛点型','钩子型']},
+  '20':{title:'信任型',reason:'粉丝多+涨粉，信任型干货老粉帮你推荐，质量比买粉高。',order:['信任型','钩子型','痛点型','转化型']},
+  '21':{title:'转化型',reason:'粉丝多+引流，转化型制造紧迫感，让观众现在就行动。',order:['转化型','信任型','痛点型','钩子型']},
+  '22':{title:'转化型',reason:'粉丝多+卖货，转化型是最佳选择，前3秒亮卖点，结尾强引导。',order:['转化型','信任型','痛点型','钩子型']},
+};
+const tplDesc={'钩子型':'前3秒制造悬念，路人停下来看完，完播率高涨粉快','痛点型':'直击客户最怕的问题，引发共鸣，主动联系','信任型':'真实案例和口碑，消除顾虑，建立专业形象','转化型':'限时感和稀缺感，直接引导观众联系你或下单'};
+let qStep=0,qAns=[null,null];
+
+function updatePills(n){
+  [0,1,2,3,4].forEach(i=>document.getElementById('p'+i).classList.toggle('on',i<n));
+  document.getElementById('step-label').textContent=n+'/5';
+}
+function go(n){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  const el=document.getElementById('s'+n);if(el)el.classList.add('show');
+  const m={1:1,2:2,3:3,4:4,'5-loading':5,5:5};updatePills(m[n]||n);
+  if(n===3)initQ();if(n===4)showRec();
+}
+function pickInd(name,el){
+  state.ind=name;document.querySelectorAll('.ib').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');
+  const oi=document.getElementById('other-inp');
+  if(name==='other'){oi.style.display='block';oi.focus();document.getElementById('s1-next').disabled=true;}
+  else{oi.style.display='none';document.getElementById('s1-next').disabled=false;}
+}
+function otherInput(v){state.ind=v.trim();document.getElementById('s1-next').disabled=!state.ind;}
+function fillEg(id,text){document.getElementById(id).value=text;updateCount(id,id.replace('p','c'),150);state[id]=text;}
+function updateCount(id,cid,max){
+  const v=document.getElementById(id).value;
+  if(id==='p3-detail')state.p3detail=v;else state[id]=v;
+  const el=document.getElementById(cid);if(el)el.textContent=v.length+'/'+max+'字';
+}
+function clearStory(){state.p1='';state.p2='';state.prodName='';state.prodImages=[];state.specs=[];state.mainSpec=null;state.p3detail='';state.benchmarkRefs=['','',''];state.benchmarkVibe='';state.benchmarkGender='';}
+
+// ===== 对标博主风格 =====
+function toggleBenchmark(){
+  const body=document.getElementById('benchmark-body');
+  const arrow=document.getElementById('bm-arrow');
+  body.classList.toggle('show');
+  arrow.classList.toggle('open');
+}
+function updateBenchmark(idx,val){
+  state.benchmarkRefs[idx]=val;
+  const c=document.getElementById('bm-c'+idx);
+  if(c)c.textContent=val.length+'字';
+}
+function pickBmGender(el,g){
+  state.benchmarkGender=g;
+  document.querySelectorAll('[data-bm-gender]').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function pickBmVibe(el,v){
+  if(state.benchmarkVibe===v){
+    state.benchmarkVibe='';
+    el.classList.remove('sel');
+  }else{
+    state.benchmarkVibe=v;
+    document.querySelectorAll('[data-bm-vibe]').forEach(b=>b.classList.remove('sel'));
+    el.classList.add('sel');
+  }
+}
+function clearBenchmark(){
+  state.benchmarkRefs=['','',''];
+  state.benchmarkVibe='';
+  state.benchmarkGender='';
+  for(let i=0;i<3;i++){
+    const t=document.getElementById('bm-ref-'+i);if(t)t.value='';
+    const c=document.getElementById('bm-c'+i);if(c)c.textContent='0字';
+  }
+  document.querySelectorAll('[data-bm-gender]').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('[data-bm-vibe]').forEach(b=>b.classList.remove('sel'));
+}
+function hasBenchmark(){
+  return state.benchmarkRefs.some(r=>r&&r.trim().length>10);
+}
+function buildBenchmarkPrompt(){
+  if(!hasBenchmark())return '';
+  const refs=state.benchmarkRefs.filter(r=>r&&r.trim().length>10);
+  let bm='\n\n=== 对标博主风格参考 ===\n用户想模仿下面这位博主的风格：\n';
+  refs.forEach((r,i)=>{ bm+=`【参考文案${i+1}】${r.trim()}\n`; });
+  if(state.benchmarkGender)bm+=`博主性别：${state.benchmarkGender}\n`;
+  if(state.benchmarkVibe)bm+=`博主调性：${state.benchmarkVibe}\n`;
+  bm+=`\n【风格学习要求】
+第一步先在心里分析这位博主的特征：
+- 开场方式（设问/反差/数据/吐槽/陈述）
+- 句式节奏（长短句搭配、是否爱用反问、口头禅）
+- 语气和人设（亲切/犀利/专业/接地气）
+- 内容结构（怎么递进、怎么收尾）
+
+第二步再生成脚本，要做到：
+✓ 句式节奏、开场方式、收尾习惯 尽量贴近对标博主
+✓ 口头禅和语气词可以适度借鉴（但别照搬整句）
+
+【重要护栏 - 严禁违反】
+✗ 不要复用博主提到的具体产品、品牌、人名、地名、数字
+✗ 不要说"大家好我是XX"这种把博主身份套到用户身上的话
+✗ 博主举的客户案例不能照抄，必须用用户自己提供的故事(p1/p2)
+✗ 学风格不学内容——内容100%必须是用户自己的产品和经历\n`;
+  return bm;
+}
+function initQ(){qStep=0;qAns=[null,null];renderQ();}
+function renderQ(){
+  const q=qs[qStep];
+  document.getElementById('q-tag').textContent=q.tag;
+  document.getElementById('q-title').textContent=q.title;
+  document.getElementById('q-sub').textContent=q.sub;
+  document.getElementById('q-back').textContent=qStep===0?'← 你的情况':'← 上一题';
+  document.getElementById('q-next').textContent=qStep===0?'下一题 →':'查看推荐 →';
+  document.getElementById('q-next').disabled=qAns[qStep]===null;
+  const c=document.getElementById('q-opts');c.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');d.className='qopt'+(qAns[qStep]===i?' sel':'');
+    d.innerHTML=`<div class="qopt-icon">${o.icon}</div><div><div class="qopt-name">${o.name}</div><div class="qopt-desc">${o.desc}</div></div><div class="qopt-check">${qAns[qStep]===i?'✓':''}</div>`;
+    d.onclick=()=>{qAns[qStep]=i;renderQ();};c.appendChild(d);
+  });
+}
+function qBack(){if(qStep===0)go(2);else{qStep=0;renderQ();}}
+function qNext(){if(qStep===0){state.fans=qAns[0];qStep=1;renderQ();}else{state.goal=qAns[1];go(4);}}
+function showRec(){
+  const key=''+state.fans+state.goal;
+  const r=recMap[key]||recMap['00'];state.tpl=r.title;
+  document.getElementById('rec-title').textContent=`最适合你的是「${r.title}」`;
+  document.getElementById('rec-reason').textContent=r.reason;
+  const list=document.getElementById('tpl-list');list.innerHTML='';
+  r.order.forEach((name,i)=>{
+    const d=document.createElement('div');d.className='tcard'+(i===0?' top':'');
+    d.innerHTML=`<div class="tcard-top"><span class="tcard-name">${name}</span><span class="tbadge ${i===0?'r':'o'}">${i===0?'AI推荐':'备选'}</span></div><div class="tcard-desc">${tplDesc[name]||''}</div>`;
+    d.onclick=()=>{
+      list.querySelectorAll('.tcard').forEach((c,ci)=>{c.classList.remove('chosen');if(ci===0)c.classList.add('top');else c.classList.remove('top');});
+      d.classList.add('chosen');d.classList.remove('top');state.tpl=name;
+      document.getElementById('s4-next').textContent=`✨ 用「${name}」生成完整脚本`;
+    };list.appendChild(d);
+  });
+  document.getElementById('s4-next').textContent=`✨ 用「${r.title}」生成完整脚本`;
+}
+
+// ===== AUTO SEG COUNT =====
+function autoSegCount(){
+  const dl=state.p3detail.length;
+  if(dl>2000)return 12;if(dl>1000)return 10;if(dl>500)return 8;if(dl>200)return 6;return 5;
+}
+
+// ===== GENERATE =====
+async function startGenerate(){
+  go('5-loading');
+  const n=autoSegCount();
+  const bmExtra=hasBenchmark()?'<br><span style="color:var(--orange);font-weight:600">🎯 已应用对标博主风格</span>':'';
+  document.getElementById('loading-sub').innerHTML=`根据你的产品信息<br>AI自动生成 ${n} 段专属脚本...${bmExtra}`;
+  const hasImg=state.prodImages.length>0;
+  // 只有后端真支持视觉，且用户上传了图，才显示"分析图片"这一步
+  const visionOn=await checkVisionEnabled();
+  const showImgStep=hasImg && visionOn;
+  if(!showImgStep)document.getElementById('ls1').style.display='none';
+  const steps=['ls0','ls1','ls2','ls3'];
+  for(let i=0;i<steps.length-1;i++){
+    await delay(i===1&&!showImgStep?0:900);
+    document.getElementById(steps[i]).className='loading-step done';
+    document.getElementById(steps[i+1]).className='loading-step active';
+  }
+  try{
+    const segs=await callClaudeAPI(n);
+    state.script=segs;
+    segStates.length=0;segs.forEach(()=>segStates.push('pending'));
+    // 保存原始脚本用于复原
+    originalScript.length=0;segs.forEach(s=>originalScript.push(JSON.parse(JSON.stringify(s))));
+    state.cur=0;undoStack.length=0;
+    saveToLibrary({
+      title:(state.prodName||state.ind||"AI脚本")+" · "+state.tpl,
+      script:JSON.parse(JSON.stringify(segs)),
+      createdAt:Date.now(),
+      source:"ai",
+      benchmark: hasBenchmark() ? {
+        refs:[...state.benchmarkRefs],
+        vibe:state.benchmarkVibe,
+        gender:state.benchmarkGender
+      } : null
+    });
+    await delay(300);document.getElementById('ls3').className='loading-step done';
+    await delay(200);initBoard();go(5);
+  }catch(e){
+    go(4);
+    const eb=document.createElement('div');eb.className='error-box';
+    const msg=e&&e.message?e.message:'网络异常';
+    eb.innerHTML='⚠️ 生成失败：'+msg+'<br><span style="font-size:11px;color:var(--text-3)">请稍后重试，或检查网络</span>';
+    document.getElementById('s4').querySelector('.pad').prepend(eb);
+    setTimeout(()=>eb.remove(),6000);
+  }
+}
+
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ===== 后端代理配置 =====
+// Vercel 部署：前后端同域，用相对路径
+// 本地调试：vercel dev 命令也会代理 /api 路径，无需修改
+const BACKEND_URL = '';  // 空字符串=相对路径,自动用当前域名
+
+// 启动校验：Vercel 部署下无需校验
+const _backendConfigured = true;
+
+// 视觉模型是否可用（调用 /api/health 检测，结果缓存到 window）
+let _visionEnabled = null;
+async function checkVisionEnabled(){
+  if(_visionEnabled!==null)return _visionEnabled;
+  try{
+    const r=await fetch(BACKEND_URL+'/api/health',{method:'GET'});
+    if(r.ok){const d=await r.json();_visionEnabled=!!d.vision;}
+    else _visionEnabled=false;
+  }catch(e){_visionEnabled=false;}
+  return _visionEnabled;
+}
+
+// ===== JSON 容错解析 =====
+// 模型偶尔会输出: ```json {...} ```、前后带解释、引号转义错乱
+function parseAIJson(text){
+  if(!text||typeof text!=='string')throw new Error('空响应');
+  let s=text.trim();
+  // 1. 去掉 markdown 代码块标记
+  s=s.replace(/```json\s*/gi,'').replace(/```\s*$/g,'').replace(/^```/g,'').trim();
+  // 2. 试图直接解析
+  try{return JSON.parse(s);}catch(e){}
+  // 3. 抠出第一个 { 到最后一个 } 的子串
+  const i=s.indexOf('{'),j=s.lastIndexOf('}');
+  if(i>=0&&j>i){
+    const sub=s.slice(i,j+1);
+    try{return JSON.parse(sub);}catch(e){}
+    // 4. 尝试修复常见错误：尾随逗号、中文引号
+    const fixed=sub
+      .replace(/,(\s*[}\]])/g,'$1')           // 尾逗号
+      .replace(/[""]/g,'"').replace(/['']/g,"'") // 中文引号
+      .replace(/\n/g,'\\n');                  // 字符串内未转义换行
+    try{return JSON.parse(fixed);}catch(e){}
+  }
+  console.error('JSON 解析失败，原文：',s.slice(0,500));
+  throw new Error('AI 返回格式错误');
+}
+
+// ===== 主 API 调用：通过后端代理 + 自动重试 =====
+async function callAPI(promptText, maxTokens, opts){
+  opts = opts || {};
+  const includeImages = opts.includeImages && state.prodImages.length > 0;
+  const retries = opts.retries ?? 2;  // 默认重试2次（共3次）
+  const expectJson = opts.expectJson !== false;  // 默认期望 JSON
+
+  const payload = {
+    prompt: promptText,
+    maxTokens: maxTokens || 4000,
+  };
+  if(includeImages){
+    payload.images = state.prodImages;  // 整段 dataURL 给后端
+  }
+
+  let lastErr;
+  for(let attempt=0; attempt<=retries; attempt++){
+    try{
+      const resp = await fetch(BACKEND_URL+'/api/generate',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload),
+      });
+
+      if(resp.status===429){
+        throw new Error('请求太频繁，请稍后再试');
+      }
+      if(!resp.ok){
+        const errData = await resp.json().catch(()=>({}));
+        throw new Error(errData.error||`后端错误 ${resp.status}`);
+      }
+      const data = await resp.json();
+      const text = data.text || '';
+      if(!text)throw new Error('AI 返回空内容');
+
+      // 期望 JSON 的话，先尝试解析校验
+      if(expectJson){
+        const parsed = parseAIJson(text);
+        return { text, parsed, model: data.model, usedVision: data.usedVision };
+      }
+      return { text, model: data.model, usedVision: data.usedVision };
+
+    }catch(e){
+      lastErr = e;
+      console.warn(`API 调用第 ${attempt+1} 次失败:`, e.message);
+      // 最后一次不再等待
+      if(attempt < retries){
+        // 指数退避：1s, 2s
+        await delay(1000 * Math.pow(2, attempt));
+      }
+    }
+  }
+  throw lastErr || new Error('AI 调用失败');
+}
+
+async function callClaudeAPI(n){
+  const ms=getMainSpec();
+  const ft=['还没开始/1000粉以内','1000-1万粉','1万粉以上'][state.fans]||'不确定';
+  const gt=['涨粉/提升知名度','引流加微信/到店','直接卖货/成交'][state.goal]||'涨粉';
+  const isLong=n>=7;
+  const bmBlock=buildBenchmarkPrompt();
+  const prompt=`你是专业短视频编导，生成${n}段完整口播脚本。
+
+用户信息：
+- 行业：${state.ind}，视频类型：${state.tpl}，粉丝：${ft}，目标：${gt}
+${state.p1?`- 个人背景：${state.p1}`:''}
+${state.p2?`- 过往经历：${state.p2}`:''}
+${state.prodName?`- 产品名称：${state.prodName}`:''}
+${ms?`- 主推规格价格：${ms}`:''}
+${state.p3detail?`- 产品详细介绍：${state.p3detail}`:''}
+${state.prodImages.length?`- 已上传${state.prodImages.length}张产品图片，请结合图片视觉细节`:''}
+${bmBlock}
+
+要求：
+1. 生成${n}段，完整覆盖：开头吸引→故事背景→产品亮点→价值说明→信任建立→行动转化
+2. 每段台词${isLong?'40字以内':'25字以内'}，每段时长${isLong?'10-15秒':'5-8秒'}
+3. 真诚自然有文化感，不像广告
+4. ${ms?`价格必须用"${ms}"，不能编造数字`:'台词不提具体价格数字'}
+${bmBlock?'5. 风格贴近对标博主，但内容100%用用户自己的产品和故事':''}
+
+【tips 字段说明 - 重要】tips 是3项数组：
+- tips[0] = 这段的「编导思路」，格式必须是【钩子类型】｜【编导理由】，用全角竖线 ｜ 分隔
+  钩子类型从下面这个库里挑最合适的（根据段落在脚本中的位置和功能）：
+
+  开头类（用于第1段）：
+    · 反常识钩子（颠覆认知/制造期待，立人设）
+    · 提问钩子（用问句直击用户疑问）
+    · 数据钩子（用数字制造可信感和震撼）
+    · 反差钩子（前后对比/期待落差）
+
+  中段类（用于第2段到倒数第2段）：
+    · 场景代入（五感唤醒/画面感强）
+    · 情绪共鸣（戳痛点+否定错误认知）
+    · 故事代入（用真实小故事承载产品）
+    · 细节信任（专业术语/独家细节建立专家感）
+    · 颠覆认知（打破用户固有印象）
+
+  结尾类（用于最后一段）：
+    · 稀缺紧迫（限时限量制造紧迫感）
+    · 价值反转（"看似贵其实超划算"）
+    · 行动召唤（明确告诉用户下一步做什么）
+
+  编导理由要写清"为什么这么写"，15-30字，要让拍摄者明白这段的策略意图。
+  示例：「反常识钩子｜用'为什么'问句替代平铺直叙，立16天串北疆的专家人设，激发用户'我也想知道'的好奇心」
+
+- tips[1] = 拍摄要点1（构图/角度/动作建议，10-20字）
+- tips[2] = 拍摄要点2（表情/语气/节奏建议，10-20字）
+
+⚠️ 重要：不同段落要用不同的钩子类型，避免雷同。整条脚本应该有节奏起伏。
+
+严格JSON：{"segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}`;
+
+  const r = await callAPI(prompt, 4000, { includeImages: true });
+  return r.parsed.segments;
+}
+
+// ===== UNDO =====
+function pushUndo(desc){
+  undoStack.push({
+    script:JSON.parse(JSON.stringify(state.script)),
+    states:[...segStates],
+    cur:state.cur,
+    desc
+  });
+  if(undoStack.length>20)undoStack.shift();
+  document.getElementById('undo-btn').disabled=false;
+  document.getElementById('undo-btn').title=`撤销：${desc}`;
+}
+function doUndo(){
+  if(!undoStack.length)return;
+  const snap=undoStack.pop();
+  state.script=snap.script;
+  segStates.length=0;snap.states.forEach(s=>segStates.push(s));
+  state.cur=snap.cur;
+  inlineEditingField=null;
+  document.getElementById('undo-btn').disabled=undoStack.length===0;
+  renderBoard();renderInsertTl();
+}
+
+// 段数输入框变化处理
+function onSegCountChange(inp){
+  let n = parseInt(inp.value);
+  // 范围校验
+  if(isNaN(n)||n<1) n=1;
+  if(n>20) n=20;
+  inp.value=n; // 修正显示
+
+  const cur=state.script.length;
+  if(n===cur) return; // 没变化
+
+  pushUndo(n>cur?`增加到${n}段`:`减少到${n}段`);
+
+  if(n>cur){
+    // 增加：末尾补空白段
+    const badgeNames=['开头','铺垫','亮点','细节','服务','信任','价值','行动','感受','体验','特色','故事','互动','解答','总结','转化','彩蛋','补充','升华','结尾'];
+    for(let i=cur;i<n;i++){
+      state.script.push({
+        badge: badgeNames[i] || `第${i+1}段`,
+        script: '',
+        action: '',
+        tips: ['', '', ''],
+        dur: '5-8秒',
+        scene: '待定'
+      });
+      segStates.push('pending');
+      originalScript.push({badge:badgeNames[i]||`第${i+1}段`,script:'',action:'',tips:['','',''],dur:'5-8秒',scene:'待定'});
+    }
+    state.cur=cur; // 跳到第一个新增的段
+  }else{
+    // 减少：从末尾删掉多余段
+    state.script.splice(n);
+    segStates.splice(n);
+    originalScript.splice(n);
+    if(state.cur>=n) state.cur=n-1;
+  }
+  inlineEditingField=null;
+  renderBoard();renderInsertTl();
+}
+
+// 删除当前选中的段落
+function deleteCurSeg(){
+  if(state.script.length<=1){alert('至少保留1段，不能再删了。');return;}
+  if(!confirm(`确定删除第${state.cur+1}段「${state.script[state.cur].badge}」吗？`))return;
+  pushUndo(`删除第${state.cur+1}段`);
+  state.script.splice(state.cur,1);
+  segStates.splice(state.cur,1);
+  originalScript.splice(state.cur,1);
+  if(state.cur>=state.script.length)state.cur=state.script.length-1;
+  inlineEditingField=null;
+  renderBoard();renderInsertTl();
+}
+
+// 打开追加弹窗（默认插入到当前段后面）
+function openAppendPopup(){
+  insertAfterIdx=state.cur; // 默认插入到当前段后面
+  document.getElementById('popup-after-idx').textContent=state.cur+1;
+  document.getElementById('append-popup-mask').style.display='block';
+  document.getElementById('append-popup').style.display='block';
+  // 重置选项状态
+  document.querySelectorAll('.append-popup-opts .append-opt').forEach(o=>o.classList.remove('sel'));
+  document.getElementById('append-custom').style.display='none';
+  document.getElementById('append-custom').value='';
+  document.getElementById('append-btn').disabled=true;
+  document.getElementById('appending').style.display='none';
+  appendTopic='';
+}
+
+function closeAppendPopup(){
+  document.getElementById('append-popup-mask').style.display='none';
+  document.getElementById('append-popup').style.display='none';
+}
+
+// ===== BOARD =====
+function initBoard(){
+  const bmTag=hasBenchmark()?` <span class="benchmark-active-pill">🎯 对标风格</span>`:'';
+  document.getElementById('board-title').innerHTML=
+    `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" max="20" value="${state.script.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag}`;
+  renderBoard();renderInsertTl();
+}
+
+function renderBoard(){
+  const segs=state.script;if(!segs.length)return;
+  const tl=document.getElementById('tl');tl.innerHTML='';
+  let done=0,redo=0,left=0;
+  segs.forEach((s,i)=>{
+    const st=segStates[i];
+    if(st==='done')done++;else if(st==='redo')redo++;else left++;
+    const d=document.createElement('div');
+    d.className='seg '+st+(i===state.cur?' active':'');
+    d.setAttribute('draggable','true');
+    d.dataset.idx=i;
+    d.innerHTML=`<span class="seg-n">${i+1}</span><span class="seg-t">${(s.badge||'').slice(0,2)}</span>${st==='done'?'<span class="seg-ck">✓</span>':''}`;
+    d.onclick=()=>{ if(dragSrcIdx===-1){state.cur=i;inlineEditingField=null;renderBoard();} };
+    // drag events
+    d.addEventListener('dragstart',onDragStart);
+    d.addEventListener('dragover',onDragOver);
+    d.addEventListener('dragleave',onDragLeave);
+    d.addEventListener('drop',onDrop);
+    d.addEventListener('dragend',onDragEnd);
+    tl.appendChild(d);
+  });
+  document.getElementById('board-prog').textContent=`${done}/${segs.length} 完成`;
+  const bmTag2=hasBenchmark()?` <span class="benchmark-active-pill">🎯 对标风格</span>`:'';
+  // 只更新段数数字，不重建整个标题（避免用户输入中途被打断）
+  const inp=document.getElementById('seg-count-input');
+  if(inp){
+    if(document.activeElement!==inp) inp.value=segs.length;
+  }else{
+    document.getElementById('board-title').innerHTML=
+      `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" max="20" value="${segs.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag2}`;
+  }
+
+  const s=segs[state.cur];
+  const color=segColors[state.cur%segColors.length];
+  const charCount=(s.script||'').replace(/[，。！？、""'']/g,'').length;
+  const maxC=segs.length>=7?40:25;const ok=charCount<=maxC;
+  const isOpen=openEditIdx===state.cur;
+  const hasOriginal=originalScript[state.cur]&&originalScript[state.cur].script!==s.script;
+
+  // 编辑态字段: 'script' | 'action' | 'tips'
+  const editing=inlineEditingField;
+
+  // 文案提示块
+  const scriptBlock = editing==='script' ? `
+    <div class="d-block editing">
+      <div class="d-block-head">
+        <span class="d-block-label">📝 文案提示</span>
+      </div>
+      <textarea class="d-block-textarea" id="inline-edit-script" rows="3">${escapeHtml(s.script||'')}</textarea>
+      <div class="d-block-edit-actions">
+        <button class="d-block-cancel" onclick="cancelInlineEdit()">取消</button>
+        <button class="d-block-save" onclick="saveInlineEdit('script')">保存</button>
+      </div>
+    </div>
+  ` : `
+    <div class="d-block">
+      <div class="d-block-head">
+        <span class="d-block-label">📝 文案提示</span>
+        <button class="d-block-edit-btn" onclick="startInlineEdit('script')">✏️ 编辑</button>
+      </div>
+      ${hasOriginal?`<button class="restore-btn" onclick="restoreSeg(${state.cur})">↺ 复原</button>`:''}
+      <div class="d-block-text">${escapeHtml(s.script||'')}</div>
+      <div class="d-script-count"><div class="count-dot ${ok?'':'warn'}"></div>${charCount}字 · ${ok?'✓ 节奏合适':'⚠️ 稍长，注意停顿'}</div>
+    </div>
+  `;
+
+  // 动作指导块
+  const actionBlock = editing==='action' ? `
+    <div class="d-block editing">
+      <div class="d-block-head">
+        <span class="d-block-label">🎬 动作指导</span>
+      </div>
+      <textarea class="d-block-textarea" id="inline-edit-action" rows="3">${escapeHtml(s.action||'')}</textarea>
+      <div class="d-block-edit-actions">
+        <button class="d-block-cancel" onclick="cancelInlineEdit()">取消</button>
+        <button class="d-block-save" onclick="saveInlineEdit('action')">保存</button>
+      </div>
+    </div>
+  ` : `
+    <div class="d-block">
+      <div class="d-block-head">
+        <span class="d-block-label">🎬 动作指导</span>
+        <button class="d-block-edit-btn" onclick="startInlineEdit('action')">✏️ 编辑</button>
+      </div>
+      <div class="d-block-text">${escapeHtml(s.action||'')}</div>
+    </div>
+  `;
+
+  // 思路块（显示 tips[0]，向后兼容旧数据）
+  // 新格式约定：tips[0] 内容可能是 "钩子类型 ｜ 编导理由" (用 ｜ 或 | 分隔)
+  // 旧数据没分隔符也能正常显示
+  const tip0 = (s.tips && s.tips[0]) || '';
+  // 拆分钩子类型和理由
+  const tip0Parts = tip0.split(/[｜|]/);
+  const hookType = tip0Parts.length>=2 ? tip0Parts[0].trim() : '';
+  const hookReason = tip0Parts.length>=2 ? tip0Parts.slice(1).join('｜').trim() : tip0;
+  const tipsDisplay = hookType
+    ? `<div class="d-block-hook-type">🎯 ${escapeHtml(hookType)}</div><div class="d-block-hook-reason">${escapeHtml(hookReason)}</div>`
+    : `<div class="d-block-text">${escapeHtml(tip0)}</div>`;
+
+  const tipsBlock = editing==='tips' ? `
+    <div class="d-block editing">
+      <div class="d-block-head">
+        <span class="d-block-label">💡 思路</span>
+      </div>
+      <textarea class="d-block-textarea" id="inline-edit-tips" rows="4" placeholder="格式：钩子类型 ｜ 编导理由&#10;例如：反常识钩子 ｜ 用'为什么'问句立专家人设，激发好奇">${escapeHtml(tip0)}</textarea>
+      <div class="d-block-edit-tip">💬 推荐格式：<b>钩子类型 ｜ 编导理由</b></div>
+      <div class="d-block-edit-actions">
+        <button class="d-block-cancel" onclick="cancelInlineEdit()">取消</button>
+        <button class="d-block-save" onclick="saveInlineEdit('tips')">保存</button>
+      </div>
+    </div>
+  ` : `
+    <div class="d-block">
+      <div class="d-block-head">
+        <span class="d-block-label">💡 思路</span>
+        <button class="d-block-edit-btn" onclick="startInlineEdit('tips')">✏️ 编辑</button>
+      </div>
+      ${tipsDisplay}
+    </div>
+  `;
+
+  document.getElementById('detail-area').innerHTML=`
+    <div class="detail-wrap">
+      <div class="d-head">
+        <span class="d-badge" style="background:${color}">${s.badge||''}</span>
+        <div class="d-metas"><span class="d-meta">${s.dur||''}</span><span class="d-meta">${s.scene||''}</span></div>
+      </div>
+      ${scriptBlock}
+      ${actionBlock}
+      ${tipsBlock}
+      <div class="edit-seg-box ${isOpen?'open':''}" id="edit-box">
+        <div class="edit-seg-toggle" onclick="toggleEdit(${state.cur})">
+          <span class="edit-seg-title">✏️ 这段不对？告诉AI怎么改</span>
+          <span class="edit-seg-arrow ${isOpen?'open':''}">▾</span>
+        </div>
+        <div class="edit-seg-body ${isOpen?'show':''}" id="edit-body">
+          <textarea class="edit-seg-inp" id="edit-inp" rows="2" placeholder="比如：太像广告了，换更真诚的说法，重点强调蜀锦文化体验...">${editFeedback[state.cur]||''}</textarea>
+          <div class="editing-hint" id="editing-hint">⏳ AI正在修改这段...</div>
+          <button class="edit-seg-btn" id="edit-btn" onclick="doEditSeg(${state.cur})">重新生成这段 →</button>
+        </div>
+      </div>
+      <div class="d-btns" style="margin-top:12px">
+        <button class="d-btn d-btn-ng" onclick="markRedo()">↺ 需要补拍</button>
+        <button class="d-btn d-btn-ok" onclick="markDone()">✓ 这段拍好了</button>
+      </div>
+      <div class="sum-bar">
+        <div class="sum-stats">
+          <div><div class="stat-n" style="color:var(--green)">${done}</div><div class="stat-l">已完成</div></div>
+          <div><div class="stat-n" style="color:#dc2626">${redo}</div><div class="stat-l">需补拍</div></div>
+          <div><div class="stat-n" style="color:var(--text-3)">${left}</div><div class="stat-l">未开始</div></div>
+        </div>
+        <button class="export-btn" ${done===segs.length&&redo===0?'':'disabled'} onclick="alert('全部拍完！\\n按顺序导入剪映合并后发布。')">去剪映合并 →</button>
+      </div>
+    </div>`;
+}
+
+// ===== DRAG =====
+function onDragStart(e){
+  dragSrcIdx=parseInt(this.dataset.idx);
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function onDragOver(e){
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  this.classList.add('drag-over');
+}
+function onDragLeave(){this.classList.remove('drag-over');}
+function onDrop(e){
+  e.preventDefault();this.classList.remove('drag-over');
+  const toIdx=parseInt(this.dataset.idx);
+  if(dragSrcIdx===toIdx||dragSrcIdx===-1)return;
+  pushUndo(`移动第${dragSrcIdx+1}段到第${toIdx+1}段位置`);
+  // 交换顺序
+  const sc=state.script.splice(dragSrcIdx,1)[0];
+  const st=segStates.splice(dragSrcIdx,1)[0];
+  const ori=originalScript.splice(dragSrcIdx,1)[0];
+  const insertAt=toIdx>dragSrcIdx?toIdx:toIdx;
+  state.script.splice(insertAt,0,sc);
+  segStates.splice(insertAt,0,st);
+  originalScript.splice(insertAt,0,ori);
+  state.cur=insertAt;
+  dragSrcIdx=-1;
+  renderBoard();renderInsertTl();
+}
+function onDragEnd(){
+  dragSrcIdx=-1;
+  document.querySelectorAll('.seg').forEach(s=>{s.classList.remove('dragging','drag-over');});
+}
+
+// ===== RESTORE =====
+function restoreSeg(idx){
+  if(!originalScript[idx])return;
+  pushUndo(`复原第${idx+1}段`);
+  state.script[idx]=JSON.parse(JSON.stringify(originalScript[idx]));
+  renderBoard();
+}
+
+// ===== EDIT SEG =====
+function toggleEdit(idx){
+  openEditIdx=openEditIdx===idx?-1:idx;renderBoard();
+  if(openEditIdx===idx)setTimeout(()=>{const el=document.getElementById('edit-inp');if(el)el.focus();},100);
+}
+async function doEditSeg(idx){
+  const fb=document.getElementById('edit-inp').value.trim();
+  editFeedback[idx]=fb;
+  const btn=document.getElementById('edit-btn');const hint=document.getElementById('editing-hint');
+  btn.disabled=true;hint.style.display='block';
+  try{
+    pushUndo(`修改第${idx+1}段`);
+    const ms=getMainSpec();const s=state.script[idx];
+    const isLong=state.script.length>=7;
+    const bmBlock=buildBenchmarkPrompt();
+    const prompt=`你是专业短视频编导，重新生成口播脚本第${idx+1}段。
+产品：${state.prodName||state.ind}，视频类型：${state.tpl}
+${state.p1?`个人背景：${state.p1}`:''}
+${state.p3detail?`产品介绍：${state.p3detail.slice(0,500)}`:''}
+${ms?`主推规格价格：${ms}`:''}
+${bmBlock}
+当前台词：${s.script}
+用户反馈：${fb||'重新生成，换一个角度'}
+台词${isLong?'40字以内':'25字以内'}，真诚自然。${ms?`价格必须用"${ms}"。`:''}${bmBlock?'风格贴近对标博主，但内容是用户自己的。':''}
+tips[0]=编导思路，格式必须是【钩子类型】｜【编导理由】，例如「反常识钩子｜用问句立专家人设」。
+  钩子类型库：反常识钩子/提问钩子/数据钩子/反差钩子/场景代入/情绪共鸣/故事代入/细节信任/颠覆认知/稀缺紧迫/价值反转/行动召唤。
+tips[1]=拍摄要点1，tips[2]=拍摄要点2。
+严格JSON：{"badge":"${s.badge}","script":"新台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"${s.dur}","scene":"${s.scene}"}`;
+    const r=await callAPI(prompt, 500);
+    state.script[idx]=r.parsed;
+    openEditIdx=-1;renderBoard();
+  }catch(e){alert('修改失败：'+(e&&e.message?e.message:'请重试'));undoStack.pop();}
+  if(btn)btn.disabled=false;if(hint)hint.style.display='none';
+}
+
+function markDone(){segStates[state.cur]='done';if(state.cur<state.script.length-1)state.cur++;renderBoard();}
+function markRedo(){
+  segStates[state.cur]='redo';
+  const next=segStates.findIndex((s,i)=>i>state.cur&&s!=='done');
+  if(next!==-1)state.cur=next;renderBoard();
+}
+
+// ===== INSERT TL =====
+function renderInsertTl(){
+  const tl=document.getElementById('insert-tl');if(!tl)return;
+  tl.innerHTML='';
+  state.script.forEach((s,i)=>{
+    const d=document.createElement('div');
+    const isDone=segStates[i]==='done';
+    d.className='ins-seg'+(isDone?' done-seg':'')+(insertAfterIdx===i?' sel':'');
+    d.textContent=i+1;d.title=`插入到第${i+1}段后面`;
+    d.onclick=()=>{
+      insertAfterIdx=insertAfterIdx===i?-1:i;
+      renderInsertTl();
+      const hint=document.getElementById('insert-hint');
+      hint.textContent=insertAfterIdx===-1?'点击选择插入位置，不选默认追加到最后':`将插入到第${insertAfterIdx+1}段「${state.script[insertAfterIdx].badge}」后面`;
+    };
+    tl.appendChild(d);
+  });
+}
+
+// ===== APPEND =====
+function selectAppend(el,topic){
+  document.querySelectorAll('.append-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');appendTopic=topic;
+  document.getElementById('append-custom').style.display=topic==='自定义'?'block':'none';
+  document.getElementById('append-btn').disabled=false;
+}
+
+async function doAppend(){
+  const topic=appendTopic==='自定义'?document.getElementById('append-custom').value:appendTopic;
+  if(!topic)return;
+  document.getElementById('appending').style.display='block';
+  document.getElementById('append-btn').disabled=true;
+  try{
+    const ms=getMainSpec();
+    const existing=state.script.map((s,i)=>`第${i+1}段：${s.script}`).join('\n');
+    const isLong=state.script.length>=7;
+    const insertPos=insertAfterIdx===-1?state.script.length-1:insertAfterIdx;
+    const bmBlock=buildBenchmarkPrompt();
+    const prompt=`你是专业短视频编导，在已有脚本基础上追加新段落。
+产品：${state.prodName||state.ind}，主推：${ms||''}
+${state.p3detail?`产品介绍：${state.p3detail.slice(0,500)}`:''}
+${bmBlock}
+已有${state.script.length}段脚本：${existing}
+追加主题「${topic}」的2-3段，插入到第${insertPos+1}段后面，和前后内容自然衔接，不重复。
+台词${isLong?'40字以内':'25字以内'}。${ms?`价格必须用"${ms}"。`:''}${bmBlock?'风格保持和前面一致（贴近对标博主）。':''}
+tips[0]=编导思路，格式必须是【钩子类型】｜【编导理由】，例如「场景代入｜用具象画面唤醒五感」。
+  钩子类型库：反常识钩子/提问钩子/数据钩子/反差钩子/场景代入/情绪共鸣/故事代入/细节信任/颠覆认知/稀缺紧迫/价值反转/行动召唤。
+  和前后段不要重复用同样的钩子类型。
+tips[1]=拍摄要点1，tips[2]=拍摄要点2。
+严格JSON：{"segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}`;
+
+    const r=await callAPI(prompt, 1500);
+    const newSegs=r.parsed.segments;
+
+    pushUndo(`在第${insertPos+1}段后追加「${topic}」`);
+
+    // 插入到指定位置
+    const at=insertAfterIdx===-1?state.script.length:insertAfterIdx+1;
+    state.script.splice(at,0,...newSegs);
+    segStates.splice(at,0,...newSegs.map(()=>'pending'));
+    originalScript.splice(at,0,...newSegs.map(s=>JSON.parse(JSON.stringify(s))));
+
+    state.cur=at;
+    closeAppendPopup();
+    appendTopic='';insertAfterIdx=-1;
+    renderBoard();renderInsertTl();
+
+  }catch(e){alert('追加失败：'+(e&&e.message?e.message:'请重试'));if(undoStack.length)undoStack.pop();}
+  document.getElementById('appending').style.display='none';
+  document.getElementById('append-btn').disabled=true;
+}
+</script>
+</body>
+</html>
