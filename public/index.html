@@ -189,6 +189,8 @@
   .d-block-edit-btn { font-size:11px; color:var(--text-3); background:#fff; border:1px solid var(--border); padding:4px 10px; border-radius:14px; cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:3px; transition:all 0.15s; }
   .d-block-edit-btn:hover { color:var(--orange); border-color:var(--orange); }
   .d-block-text { font-size: 17px; font-weight: 600; color: var(--text); line-height: 1.65; letter-spacing: -0.3px; word-break:break-word; }
+  /* 文案提示专用高亮：橙色荧光笔效果，多行自适应 */
+  .d-script-highlight { display: inline; background: var(--orange-light); color: var(--orange-dark); padding: 3px 8px; border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; line-height: 2.1; }
   /* 思路块专用：钩子类型(加粗大字) + 编导理由(小字次要色) */
   .d-block-hook-type { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.5; letter-spacing: -0.2px; margin-bottom: 6px; }
   .d-block-hook-reason { font-size: 13px; font-weight: 400; color: var(--text-2); line-height: 1.65; }
@@ -1513,7 +1515,7 @@ function renderBoard(){
         <button class="d-block-edit-btn" onclick="startInlineEdit('script')">✏️ 编辑</button>
       </div>
       ${hasOriginal?`<button class="restore-btn" onclick="restoreSeg(${state.cur})">↺ 复原</button>`:''}
-      <div class="d-block-text">${escapeHtml(s.script||'')}</div>
+      <div class="d-block-text"><span class="d-script-highlight">${escapeHtml(s.script||'')}</span></div>
       <div class="d-script-count"><div class="count-dot ${ok?'':'warn'}"></div>${charCount}字 · ${ok?'✓ 节奏合适':'⚠️ 稍长，注意停顿'}</div>
     </div>
   `;
