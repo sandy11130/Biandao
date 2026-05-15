@@ -580,6 +580,23 @@
     </div>
   </div>
 
+  <!-- S4-preview: AI 生成完整文案预览，可编辑/重新生成/进入分段 -->
+  <div class="screen" id="s4-preview">
+    <div style="padding: 16px 16px 80px;">
+      <div style="font-size: 14px; font-weight: 700; color: var(--orange); margin-bottom: 4px;">✨ AI 完整文案</div>
+      <div style="font-size: 12px; color: var(--text-3); margin-bottom: 14px;">读一遍看看，满意就进入分段；不满意可以重生或者直接改</div>
+      <textarea class="part-textarea" id="full-script-area" rows="14" style="font-size: 15px; line-height: 1.8; padding: 14px;" oninput="onFullScriptEdit(this)" placeholder="AI 生成的完整文案会显示在这里..."></textarea>
+      <div id="full-script-meta" style="font-size: 11px; color: var(--text-3); margin-top: 6px; display:flex; justify-content:space-between; align-items:center;">
+        <span id="full-script-count">0 字</span>
+        <span id="full-script-edited-tag" style="display:none; color:var(--orange); font-weight:600;">✏️ 已编辑，进入分段时会按新文案重新拆</span>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button class="btn-main" style="flex:1; background:#fff; color:var(--text-2); border:1.5px solid var(--border);" onclick="regenerateFullScript()">↻ 重新生成</button>
+        <button class="btn-main" style="flex:2;" onclick="confirmFullScript()">用这个文案 →</button>
+      </div>
+    </div>
+  </div>
+
   <!-- S5 看板 -->
   <div class="screen" id="s5">
     <div class="board-top">
@@ -684,7 +701,9 @@ const state = {
   ind:'', p1:'', p2:'',
   prodName:'', prodImages:[], specs:[], mainSpec:null, p3detail:'',
   benchmarkRefs:['','',''], benchmarkVibe:'', benchmarkGender:'',
-  fans:null, goal:null, tpl:'', cur:0, script:[]
+  fans:null, goal:null, tpl:'', cur:0, script:[],
+  // 完整文案预览：AI 生成的原始全文 + 用户编辑后的内容 + 是否被编辑过
+  fullScript:'', fullScriptEdited:false
 };
 const segStates = [];
 const originalScript = []; // 复原用
@@ -776,6 +795,7 @@ window.onload = () => {
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
     if(n==='paste'){document.getElementById('spaste').classList.add('show');updatePills(1);return;}
     if(n==='paste-loading'){document.getElementById('spaste-loading').classList.add('show');updatePills(1);return;}
+    if(n==='4-preview'){document.getElementById('s4-preview').classList.add('show');updatePills(5);return;}
     if(n==='library'){document.getElementById('slibrary').classList.add('show');renderLibrary();updatePills(1);return;}
     if(n===0){document.getElementById('s0').classList.add('show');updatePills(1);return;}
     origGo(n);
@@ -918,6 +938,7 @@ function loadFromLibrary(idx){
   segStates.length=0;item.script.forEach(function(){segStates.push('pending');});
   originalScript.length=0;item.script.forEach(function(s){originalScript.push(JSON.parse(JSON.stringify(s)));});
   state.cur=0;undoStack.length=0;
+  state.fullScript=''; state.fullScriptEdited=false;
   initBoard();go(5);
 }
 
@@ -1145,15 +1166,18 @@ async function startGenerate(){
     document.getElementById(steps[i+1]).className='loading-step active';
   }
   try{
-    const segs=await callClaudeAPI(n);
-    state.script=segs;
-    segStates.length=0;segs.forEach(()=>segStates.push('pending'));
+    const result=await callClaudeAPI(n);
+    // result 现在是 {fullScript, segments}
+    state.script=result.segments;
+    state.fullScript=result.fullScript||'';
+    state.fullScriptEdited=false;
+    segStates.length=0;result.segments.forEach(()=>segStates.push('pending'));
     // 保存原始脚本用于复原
-    originalScript.length=0;segs.forEach(s=>originalScript.push(JSON.parse(JSON.stringify(s))));
+    originalScript.length=0;result.segments.forEach(s=>originalScript.push(JSON.parse(JSON.stringify(s))));
     state.cur=0;undoStack.length=0;
     saveToLibrary({
       title:(state.prodName||state.ind||"AI脚本")+" · "+state.tpl,
-      script:JSON.parse(JSON.stringify(segs)),
+      script:JSON.parse(JSON.stringify(result.segments)),
       createdAt:Date.now(),
       source:"ai",
       benchmark: hasBenchmark() ? {
@@ -1163,7 +1187,8 @@ async function startGenerate(){
       } : null
     });
     await delay(300);document.getElementById('ls3').className='loading-step done';
-    await delay(200);initBoard();go(5);
+    // 不再直接进看板，先到预览页
+    await delay(200);showFullScriptPreview();
   }catch(e){
     go(4);
     const eb=document.createElement('div');eb.className='error-box';
@@ -1175,6 +1200,98 @@ async function startGenerate(){
 }
 
 function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ===== 完整文案预览页 =====
+function showFullScriptPreview(){
+  const ta = document.getElementById('full-script-area');
+  ta.value = state.fullScript || '';
+  state.fullScriptEdited = false;
+  document.getElementById('full-script-edited-tag').style.display = 'none';
+  updateFullScriptCount();
+  go('4-preview');
+}
+function updateFullScriptCount(){
+  const v = document.getElementById('full-script-area').value || '';
+  // 去掉常见标点统计纯字数
+  const n = v.replace(/[，。！？、""''\s,\.\?!]/g,'').length;
+  document.getElementById('full-script-count').textContent = `${n} 字`;
+}
+function onFullScriptEdit(ta){
+  // 只要值跟 AI 原始返回的不一样，就标记为"已编辑"
+  state.fullScriptEdited = (ta.value !== state.fullScript);
+  document.getElementById('full-script-edited-tag').style.display
+    = state.fullScriptEdited ? 'inline' : 'none';
+  updateFullScriptCount();
+}
+async function regenerateFullScript(){
+  // 已编辑过则提示确认
+  if(state.fullScriptEdited){
+    if(!confirm('你刚才编辑的内容会丢失，确定重新生成吗？'))return;
+  }
+  // 重新调 AI 生成完整脚本（沿用 startGenerate 的 loading 流程）
+  // 重置 loading 步骤状态
+  ['ls0','ls1','ls2','ls3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.className = i===0 ? 'loading-step active' : 'loading-step';
+  });
+  await startGenerate();
+}
+async function confirmFullScript(){
+  const edited = state.fullScriptEdited;
+  if(edited){
+    // 用户编辑过文案 → 让 AI 按新文案重新拆段
+    const newText = document.getElementById('full-script-area').value.trim();
+    if(!newText){
+      alert('文案不能为空哦');
+      return;
+    }
+    // 切到分段 loading 页（复用 spaste-loading）
+    ['pls0','pls1','pls2','pls3'].forEach((id,i)=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      el.className = i===0 ? 'loading-step active' : 'loading-step';
+    });
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+    document.getElementById('spaste-loading').classList.add('show');
+    // 推进 loading 动画
+    const steps=['pls0','pls1','pls2','pls3'];
+    for(let i=0;i<steps.length-1;i++){
+      await delay(700);
+      document.getElementById(steps[i]).className='loading-step done';
+      document.getElementById(steps[i+1]).className='loading-step active';
+    }
+    try{
+      const title = state.prodName||state.ind||'我的脚本';
+      const prompt='你是专业短视频编导，把下面这段文案拆分成适合真人出镜短视频的分段脚本。\n\n文案内容：\n'+newText+'\n\n要求：\n1. 根据内容自然拆分成3-10段，每段台词控制在25字以内，保留原文意思\n2. 每段配上：动作指导（拍摄时怎么做，2句内）、tips数组3项\n3. 给每段起一个简短的名称（2-4字），标注时长（5-8秒）和场景建议\n\n【tips 字段说明 - 重要】\n- tips[0] = 这段的「编导思路」，格式必须是【钩子类型】｜【编导理由】，用全角竖线 ｜ 分隔\n  开头段用：反常识钩子/提问钩子/数据钩子/反差钩子\n  中段用：场景代入/情绪共鸣/故事代入/细节信任/颠覆认知\n  结尾段用：稀缺紧迫/价值反转/行动召唤\n  编导理由要写清"这段为什么这么写"，15-30字\n  示例：「反常识钩子｜用问句立专家人设，激发用户好奇心」\n- tips[1] = 拍摄要点1（构图/动作建议，10-20字）\n- tips[2] = 拍摄要点2（表情/节奏建议，10-20字）\n⚠️ 不同段落用不同钩子类型，避免雷同。\n\n严格JSON：{"title":"'+title+'","segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}';
+      const r = await callAPI(prompt, 4000);
+      const segs = r.parsed.segments;
+      state.script = segs;
+      state.fullScript = newText;
+      state.fullScriptEdited = false;
+      segStates.length=0; segs.forEach(()=>segStates.push('pending'));
+      originalScript.length=0; segs.forEach(s=>originalScript.push(JSON.parse(JSON.stringify(s))));
+      state.cur=0; undoStack.length=0;
+      saveToLibrary({
+        title:title+'（编辑版）',
+        script:JSON.parse(JSON.stringify(segs)),
+        createdAt:Date.now(),
+        source:"ai-edited"
+      });
+      document.getElementById('pls3').className='loading-step done';
+      await delay(200);
+      initBoard(); go(5);
+    }catch(e){
+      console.error(e);
+      alert('重新拆分失败：' + (e&&e.message?e.message:'请稍后重试'));
+      // 退回预览页
+      showFullScriptPreview();
+    }
+  }else{
+    // 没编辑 → 直接用 AI 第一次拆好的 segments 进看板
+    initBoard(); go(5);
+  }
+}
 
 // ===== 后端代理配置 =====
 // Vercel 部署：前后端同域，用相对路径
@@ -1331,10 +1448,20 @@ ${bmBlock?'5. 风格贴近对标博主，但内容100%用用户自己的产品�
 
 ⚠️ 重要：不同段落要用不同的钩子类型，避免雷同。整条脚本应该有节奏起伏。
 
-严格JSON：{"segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}`;
+【输出格式 - 重要】
+你需要同时输出两个字段：
+1. fullScript：把所有段落的台词按顺序拼接成的完整文案，作为一段连贯的口播稿，方便用户预览全文（不要包含段落编号、不要包含动作和tips）。
+2. segments：分段数组，每段独立完整。
+
+严格JSON：{"fullScript":"完整拼接好的口播文案...","segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}`;
 
   const r = await callAPI(prompt, 4000, { includeImages: true });
-  return r.parsed.segments;
+  // 如果 AI 没返回 fullScript（兼容老调用），用 segments 自动拼一个
+  const parsed = r.parsed;
+  if(!parsed.fullScript && parsed.segments){
+    parsed.fullScript = parsed.segments.map(s=>s.script||'').filter(Boolean).join('');
+  }
+  return parsed;
 }
 
 // ===== UNDO =====
