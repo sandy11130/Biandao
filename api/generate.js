@@ -1,17 +1,25 @@
 /**
- * Vercel Serverless Function - AI 代理接口
+ * Vercel Serverless Function - AI 代理接口（阿里云通义千问版）
  * 路径: /api/generate
  *
- * 自动加载环境变量（在 Vercel Dashboard 配置）:
- *   DEEPSEEK_API_KEY - DeepSeek key（必填）
- *   QWEN_API_KEY     - 通义千问 key（可选，图片识别用）
+ * 环境变量（在 Vercel Dashboard 配置）:
+ *   DASHSCOPE_API_KEY - 阿里云百炼 API key（必填）
+ *                       从 https://bailian.console.aliyun.com 申请
+ *
+ * 模型自动选择：
+ *   无图片 → qwen-plus（性价比之王，文本场景默认）
+ *   有图片 → qwen-vl-max-latest（视觉模型，自动切换）
  */
 
 const CONFIG = {
-  TEXT_API_URL: 'https://api.deepseek.com/chat/completions',
-  TEXT_MODEL: 'deepseek-chat',
-  VISION_API_URL: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+  // 阿里云百炼兼容 OpenAI 协议的接入点
+  API_URL: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+
+  // 文本模型（性价比最高）
+  TEXT_MODEL: 'qwen-plus',
+  // 视觉模型（处理图片）
   VISION_MODEL: 'qwen-vl-max-latest',
+
   MAX_TOKENS_DEFAULT: 4000,
   MAX_TOKENS_LIMIT: 8000,
   RATE_LIMIT_PER_MIN: 20,
@@ -34,7 +42,6 @@ function checkRateLimit(ip) {
 }
 
 export default async function handler(req, res) {
-  // 因为前后端同域，理论上不用 CORS，但加一下以防本地调试
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -48,7 +55,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 速率限制
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
             || req.headers['x-real-ip']
             || 'unknown';
@@ -61,22 +67,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'prompt 必填' });
     }
 
-    const hasImages = Array.isArray(images) && images.length > 0;
-    const useVision = hasImages && !!process.env.QWEN_API_KEY;
-
-    const apiUrl = useVision ? CONFIG.VISION_API_URL : CONFIG.TEXT_API_URL;
-    const model = useVision ? CONFIG.VISION_MODEL : CONFIG.TEXT_MODEL;
-    const apiKey = useVision ? process.env.QWEN_API_KEY : process.env.DEEPSEEK_API_KEY;
-
+    const apiKey = process.env.DASHSCOPE_API_KEY;
     if (!apiKey) {
       return res.status(500).json({
-        error: useVision ? '视觉模型 key 未配置' : 'API key 未配置，请在 Vercel 设置环境变量 DEEPSEEK_API_KEY'
+        error: 'API key 未配置，请在 Vercel 设置环境变量 DASHSCOPE_API_KEY'
       });
     }
 
+    const hasImages = Array.isArray(images) && images.length > 0;
+    // 有图片→视觉模型，无图片→文本模型
+    const model = hasImages ? CONFIG.VISION_MODEL : CONFIG.TEXT_MODEL;
+
     // 构造消息
     let messages;
-    if (useVision) {
+    if (hasImages) {
       const content = [];
       images.slice(0, 3).forEach(img => {
         content.push({ type: 'image_url', image_url: { url: img } });
@@ -93,7 +97,7 @@ export default async function handler(req, res) {
     );
 
     // 调用上游 AI
-    const upstream = await fetch(apiUrl, {
+    const upstream = await fetch(CONFIG.API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -118,7 +122,7 @@ export default async function handler(req, res) {
       ok: true,
       text,
       model,
-      usedVision: useVision
+      usedVision: hasImages
     });
 
   } catch (e) {
