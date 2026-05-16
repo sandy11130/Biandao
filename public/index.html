@@ -140,7 +140,7 @@
   .board-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .board-title { font-size: 13px; font-weight: 600; color: var(--text); }
   /* 可编辑的段数输入框 */
-  .seg-count-input { width: 2.8em; text-align: center; font-size: 13px; font-weight: 700; color: var(--orange); background: var(--orange-light); border: 1.5px solid var(--orange); border-radius: 6px; padding: 1px 4px; outline: none; font-family: inherit; -moz-appearance: textfield; }
+  .seg-count-input { width: 2.2em; text-align: center; font-size: 13px; font-weight: 700; color: var(--orange); background: var(--orange-light); border: 1.5px solid var(--orange); border-radius: 6px; padding: 1px 4px; outline: none; font-family: inherit; -moz-appearance: textfield; }
   .seg-count-input::-webkit-outer-spin-button,
   .seg-count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .board-actions { display: flex; gap: 6px; align-items: center; }
@@ -153,10 +153,6 @@
   .tl-wrap { margin-bottom: 8px; }
   .tl-hint { font-size: 10px; color: var(--text-3); margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
   .tl { display: flex; gap: 4px; flex-wrap: wrap; min-height: 48px; }
-  .tl.collapsed { max-height: 50px; overflow: hidden; }
-  .tl-expand-btn { display:none; width:100%; margin-top:6px; background:transparent; border:1px dashed var(--border); border-radius:8px; padding:5px; font-size:11px; color:var(--text-3); cursor:pointer; font-family:inherit; transition:all 0.15s; }
-  .tl-expand-btn:hover { border-color:var(--orange); color:var(--orange); }
-  .tl-expand-btn.show { display:block; }
   .seg { min-width: 34px; flex: 1; max-width: 50px; height: 46px; border-radius: 8px; cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 2.5px solid transparent; transition: background 0.2s, transform 0.15s; position: relative; background: var(--gray-3); user-select: none; }
   .seg:active { cursor: grabbing; }
   .seg.active { border-color: var(--black); }
@@ -189,8 +185,6 @@
   .d-block-edit-btn { font-size:11px; color:var(--text-3); background:#fff; border:1px solid var(--border); padding:4px 10px; border-radius:14px; cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:3px; transition:all 0.15s; }
   .d-block-edit-btn:hover { color:var(--orange); border-color:var(--orange); }
   .d-block-text { font-size: 17px; font-weight: 600; color: var(--text); line-height: 1.65; letter-spacing: -0.3px; word-break:break-word; }
-  /* 文案提示专用高亮：橙色荧光笔效果，多行自适应 */
-  .d-script-highlight { display: inline; background: var(--orange-light); color: var(--orange-dark); padding: 3px 8px; border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; line-height: 2.1; }
   /* 思路块专用：钩子类型(加粗大字) + 编导理由(小字次要色) */
   .d-block-hook-type { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.5; letter-spacing: -0.2px; margin-bottom: 6px; }
   .d-block-hook-reason { font-size: 13px; font-weight: 400; color: var(--text-2); line-height: 1.65; }
@@ -580,23 +574,6 @@
     </div>
   </div>
 
-  <!-- S4-preview: AI 生成完整文案预览，可编辑/重新生成/进入分段 -->
-  <div class="screen" id="s4-preview">
-    <div style="padding: 16px 16px 80px;">
-      <div style="font-size: 14px; font-weight: 700; color: var(--orange); margin-bottom: 4px;">✨ AI 完整文案</div>
-      <div style="font-size: 12px; color: var(--text-3); margin-bottom: 14px;">读一遍看看，满意就进入分段；不满意可以重生或者直接改</div>
-      <textarea class="part-textarea" id="full-script-area" rows="14" style="font-size: 15px; line-height: 1.8; padding: 14px;" oninput="onFullScriptEdit(this)" placeholder="AI 生成的完整文案会显示在这里..."></textarea>
-      <div id="full-script-meta" style="font-size: 11px; color: var(--text-3); margin-top: 6px; display:flex; justify-content:space-between; align-items:center;">
-        <span id="full-script-count">0 字</span>
-        <span id="full-script-edited-tag" style="display:none; color:var(--orange); font-weight:600;">✏️ 已编辑，进入分段时会按新文案重新拆</span>
-      </div>
-      <div style="display:flex; gap:10px; margin-top:14px;">
-        <button class="btn-main" style="flex:1; background:#fff; color:var(--text-2); border:1.5px solid var(--border);" onclick="regenerateFullScript()">↻ 重新生成</button>
-        <button class="btn-main" style="flex:2;" onclick="confirmFullScript()">用这个文案 →</button>
-      </div>
-    </div>
-  </div>
-
   <!-- S5 看板 -->
   <div class="screen" id="s5">
     <div class="board-top">
@@ -611,10 +588,9 @@
         <div class="tl-hint">💡 长按色块可拖拽调整顺序</div>
         <div class="tl-with-btns">
           <button class="tl-side-btn tl-minus" onclick="deleteCurSeg()" title="删除当前这一段">－</button>
-          <div class="tl collapsed" id="tl"></div>
+          <div class="tl" id="tl"></div>
           <button class="tl-side-btn tl-plus" onclick="openAppendPopup()" title="在当前段落后面新增一段">＋</button>
         </div>
-        <button class="tl-expand-btn" id="tl-expand-btn" onclick="toggleTlExpand()">展开全部 ▾</button>
       </div>
       <div class="tl-legend">
         <div class="leg"><div class="leg-dot" style="background:var(--gray-3);border:1px solid var(--border)"></div>未拍</div>
@@ -701,9 +677,7 @@ const state = {
   ind:'', p1:'', p2:'',
   prodName:'', prodImages:[], specs:[], mainSpec:null, p3detail:'',
   benchmarkRefs:['','',''], benchmarkVibe:'', benchmarkGender:'',
-  fans:null, goal:null, tpl:'', cur:0, script:[],
-  // 完整文案预览：AI 生成的原始全文 + 用户编辑后的内容 + 是否被编辑过
-  fullScript:'', fullScriptEdited:false
+  fans:null, goal:null, tpl:'', cur:0, script:[]
 };
 const segStates = [];
 const originalScript = []; // 复原用
@@ -718,10 +692,6 @@ let dragSrcIdx = -1;
 
 // 内联编辑状态：'script' | 'action' | 'tips' | null
 let inlineEditingField = null;
-
-// 色块区是否展开（段数多时默认收起，只显示一行）
-let tlExpanded = false;
-function toggleTlExpand(){ tlExpanded = !tlExpanded; renderBoard(); }
 
 // HTML 转义,防止用户输入破坏 innerHTML
 function escapeHtml(s){
@@ -795,7 +765,6 @@ window.onload = () => {
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
     if(n==='paste'){document.getElementById('spaste').classList.add('show');updatePills(1);return;}
     if(n==='paste-loading'){document.getElementById('spaste-loading').classList.add('show');updatePills(1);return;}
-    if(n==='4-preview'){document.getElementById('s4-preview').classList.add('show');updatePills(5);return;}
     if(n==='library'){document.getElementById('slibrary').classList.add('show');renderLibrary();updatePills(1);return;}
     if(n===0){document.getElementById('s0').classList.add('show');updatePills(1);return;}
     origGo(n);
@@ -829,11 +798,10 @@ async function startPasteGenerate(){
   }
 
   try{
-    var prompt='你是专业短视频编导，把下面这段文案拆分成适合真人出镜短视频的分段脚本。\n\n文案内容：\n'+text+'\n\n要求：\n1. 根据内容自然拆分成3-10段，每段台词控制在25字以内，保留原文意思\n2. 每段配上：动作指导（拍摄时怎么做，2句内）、tips数组3项\n3. 给每段起一个简短的名称（2-4字），标注时长（5-8秒）和场景建议\n\n【tips 字段说明 - 重要】\n- tips[0] = 这段的「编导思路」，格式必须是【钩子类型】｜【编导理由】，用全角竖线 ｜ 分隔\n  开头段用：反常识钩子/提问钩子/数据钩子/反差钩子\n  中段用：场景代入/情绪共鸣/故事代入/细节信任/颠覆认知\n  结尾段用：稀缺紧迫/价值反转/行动召唤\n  编导理由要写清"这段为什么这么写"，15-30字\n  示例：「反常识钩子｜用问句立专家人设，激发用户好奇心」\n- tips[1] = 拍摄要点1（构图/动作建议，10-20字）\n- tips[2] = 拍摄要点2（表情/节奏建议，10-20字）\n⚠️ 不同段落用不同钩子类型，避免雷同。\n\n严格JSON：{"title":"'+title+'","segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}';
-
+    // 【安全改造】只传文案和标题，提示词在后端
     var respText, parsed;
     try{
-      const r = await callAPI(prompt, 4000);
+      const r = await callAPI('split_text', { text:text, title:title }, 4000);
       respText = r.text;
       parsed = r.parsed;
     }catch(e){
@@ -938,7 +906,6 @@ function loadFromLibrary(idx){
   segStates.length=0;item.script.forEach(function(){segStates.push('pending');});
   originalScript.length=0;item.script.forEach(function(s){originalScript.push(JSON.parse(JSON.stringify(s)));});
   state.cur=0;undoStack.length=0;
-  state.fullScript=''; state.fullScriptEdited=false;
   initBoard();go(5);
 }
 
@@ -1081,31 +1048,8 @@ function clearBenchmark(){
 function hasBenchmark(){
   return state.benchmarkRefs.some(r=>r&&r.trim().length>10);
 }
-function buildBenchmarkPrompt(){
-  if(!hasBenchmark())return '';
-  const refs=state.benchmarkRefs.filter(r=>r&&r.trim().length>10);
-  let bm='\n\n=== 对标博主风格参考 ===\n用户想模仿下面这位博主的风格：\n';
-  refs.forEach((r,i)=>{ bm+=`【参考文案${i+1}】${r.trim()}\n`; });
-  if(state.benchmarkGender)bm+=`博主性别：${state.benchmarkGender}\n`;
-  if(state.benchmarkVibe)bm+=`博主调性：${state.benchmarkVibe}\n`;
-  bm+=`\n【风格学习要求】
-第一步先在心里分析这位博主的特征：
-- 开场方式（设问/反差/数据/吐槽/陈述）
-- 句式节奏（长短句搭配、是否爱用反问、口头禅）
-- 语气和人设（亲切/犀利/专业/接地气）
-- 内容结构（怎么递进、怎么收尾）
-
-第二步再生成脚本，要做到：
-✓ 句式节奏、开场方式、收尾习惯 尽量贴近对标博主
-✓ 口头禅和语气词可以适度借鉴（但别照搬整句）
-
-【重要护栏 - 严禁违反】
-✗ 不要复用博主提到的具体产品、品牌、人名、地名、数字
-✗ 不要说"大家好我是XX"这种把博主身份套到用户身上的话
-✗ 博主举的客户案例不能照抄，必须用用户自己提供的故事(p1/p2)
-✗ 学风格不学内容——内容100%必须是用户自己的产品和经历\n`;
-  return bm;
-}
+// 【安全改造】对标风格的提示词逻辑已移至后端，此处仅保留空壳防止旧引用报错
+function buildBenchmarkPrompt(){ return ''; }
 function initQ(){qStep=0;qAns=[null,null];renderQ();}
 function renderQ(){
   const q=qs[qStep];
@@ -1166,18 +1110,15 @@ async function startGenerate(){
     document.getElementById(steps[i+1]).className='loading-step active';
   }
   try{
-    const result=await callClaudeAPI(n);
-    // result 现在是 {fullScript, segments}
-    state.script=result.segments;
-    state.fullScript=result.fullScript||'';
-    state.fullScriptEdited=false;
-    segStates.length=0;result.segments.forEach(()=>segStates.push('pending'));
+    const segs=await callClaudeAPI(n);
+    state.script=segs;
+    segStates.length=0;segs.forEach(()=>segStates.push('pending'));
     // 保存原始脚本用于复原
-    originalScript.length=0;result.segments.forEach(s=>originalScript.push(JSON.parse(JSON.stringify(s))));
+    originalScript.length=0;segs.forEach(s=>originalScript.push(JSON.parse(JSON.stringify(s))));
     state.cur=0;undoStack.length=0;
     saveToLibrary({
       title:(state.prodName||state.ind||"AI脚本")+" · "+state.tpl,
-      script:JSON.parse(JSON.stringify(result.segments)),
+      script:JSON.parse(JSON.stringify(segs)),
       createdAt:Date.now(),
       source:"ai",
       benchmark: hasBenchmark() ? {
@@ -1187,8 +1128,7 @@ async function startGenerate(){
       } : null
     });
     await delay(300);document.getElementById('ls3').className='loading-step done';
-    // 不再直接进看板，先到预览页
-    await delay(200);showFullScriptPreview();
+    await delay(200);initBoard();go(5);
   }catch(e){
     go(4);
     const eb=document.createElement('div');eb.className='error-box';
@@ -1200,98 +1140,6 @@ async function startGenerate(){
 }
 
 function delay(ms){return new Promise(r=>setTimeout(r,ms));}
-
-// ===== 完整文案预览页 =====
-function showFullScriptPreview(){
-  const ta = document.getElementById('full-script-area');
-  ta.value = state.fullScript || '';
-  state.fullScriptEdited = false;
-  document.getElementById('full-script-edited-tag').style.display = 'none';
-  updateFullScriptCount();
-  go('4-preview');
-}
-function updateFullScriptCount(){
-  const v = document.getElementById('full-script-area').value || '';
-  // 去掉常见标点统计纯字数
-  const n = v.replace(/[，。！？、""''\s,\.\?!]/g,'').length;
-  document.getElementById('full-script-count').textContent = `${n} 字`;
-}
-function onFullScriptEdit(ta){
-  // 只要值跟 AI 原始返回的不一样，就标记为"已编辑"
-  state.fullScriptEdited = (ta.value !== state.fullScript);
-  document.getElementById('full-script-edited-tag').style.display
-    = state.fullScriptEdited ? 'inline' : 'none';
-  updateFullScriptCount();
-}
-async function regenerateFullScript(){
-  // 已编辑过则提示确认
-  if(state.fullScriptEdited){
-    if(!confirm('你刚才编辑的内容会丢失，确定重新生成吗？'))return;
-  }
-  // 重新调 AI 生成完整脚本（沿用 startGenerate 的 loading 流程）
-  // 重置 loading 步骤状态
-  ['ls0','ls1','ls2','ls3'].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    if(!el)return;
-    el.className = i===0 ? 'loading-step active' : 'loading-step';
-  });
-  await startGenerate();
-}
-async function confirmFullScript(){
-  const edited = state.fullScriptEdited;
-  if(edited){
-    // 用户编辑过文案 → 让 AI 按新文案重新拆段
-    const newText = document.getElementById('full-script-area').value.trim();
-    if(!newText){
-      alert('文案不能为空哦');
-      return;
-    }
-    // 切到分段 loading 页（复用 spaste-loading）
-    ['pls0','pls1','pls2','pls3'].forEach((id,i)=>{
-      const el=document.getElementById(id);
-      if(!el)return;
-      el.className = i===0 ? 'loading-step active' : 'loading-step';
-    });
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
-    document.getElementById('spaste-loading').classList.add('show');
-    // 推进 loading 动画
-    const steps=['pls0','pls1','pls2','pls3'];
-    for(let i=0;i<steps.length-1;i++){
-      await delay(700);
-      document.getElementById(steps[i]).className='loading-step done';
-      document.getElementById(steps[i+1]).className='loading-step active';
-    }
-    try{
-      const title = state.prodName||state.ind||'我的脚本';
-      const prompt='你是专业短视频编导，把下面这段文案拆分成适合真人出镜短视频的分段脚本。\n\n文案内容：\n'+newText+'\n\n要求：\n1. 根据内容自然拆分成3-10段，每段台词控制在25字以内，保留原文意思\n2. 每段配上：动作指导（拍摄时怎么做，2句内）、tips数组3项\n3. 给每段起一个简短的名称（2-4字），标注时长（5-8秒）和场景建议\n\n【tips 字段说明 - 重要】\n- tips[0] = 这段的「编导思路」，格式必须是【钩子类型】｜【编导理由】，用全角竖线 ｜ 分隔\n  开头段用：反常识钩子/提问钩子/数据钩子/反差钩子\n  中段用：场景代入/情绪共鸣/故事代入/细节信任/颠覆认知\n  结尾段用：稀缺紧迫/价值反转/行动召唤\n  编导理由要写清"这段为什么这么写"，15-30字\n  示例：「反常识钩子｜用问句立专家人设，激发用户好奇心」\n- tips[1] = 拍摄要点1（构图/动作建议，10-20字）\n- tips[2] = 拍摄要点2（表情/节奏建议，10-20字）\n⚠️ 不同段落用不同钩子类型，避免雷同。\n\n严格JSON：{"title":"'+title+'","segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}';
-      const r = await callAPI(prompt, 4000);
-      const segs = r.parsed.segments;
-      state.script = segs;
-      state.fullScript = newText;
-      state.fullScriptEdited = false;
-      segStates.length=0; segs.forEach(()=>segStates.push('pending'));
-      originalScript.length=0; segs.forEach(s=>originalScript.push(JSON.parse(JSON.stringify(s))));
-      state.cur=0; undoStack.length=0;
-      saveToLibrary({
-        title:title+'（编辑版）',
-        script:JSON.parse(JSON.stringify(segs)),
-        createdAt:Date.now(),
-        source:"ai-edited"
-      });
-      document.getElementById('pls3').className='loading-step done';
-      await delay(200);
-      initBoard(); go(5);
-    }catch(e){
-      console.error(e);
-      alert('重新拆分失败：' + (e&&e.message?e.message:'请稍后重试'));
-      // 退回预览页
-      showFullScriptPreview();
-    }
-  }else{
-    // 没编辑 → 直接用 AI 第一次拆好的 segments 进看板
-    initBoard(); go(5);
-  }
-}
 
 // ===== 后端代理配置 =====
 // Vercel 部署：前后端同域，用相对路径
@@ -1339,14 +1187,18 @@ function parseAIJson(text){
 }
 
 // ===== 主 API 调用：通过后端代理 + 自动重试 =====
-async function callAPI(promptText, maxTokens, opts){
+// 【安全改造】callAPI 现在只发"任务类型 + 变量"，提示词模板在后端
+// task: 'main_script' | 'split_text' | 'rewrite_seg' | 'append_segs'
+// vars: 该任务需要的用户变量对象
+async function callAPI(task, vars, maxTokens, opts){
   opts = opts || {};
   const includeImages = opts.includeImages && state.prodImages.length > 0;
   const retries = opts.retries ?? 2;  // 默认重试2次（共3次）
   const expectJson = opts.expectJson !== false;  // 默认期望 JSON
 
   const payload = {
-    prompt: promptText,
+    task: task,
+    vars: vars || {},
     maxTokens: maxTokens || 4000,
   };
   if(includeImages){
@@ -1394,74 +1246,21 @@ async function callAPI(promptText, maxTokens, opts){
 }
 
 async function callClaudeAPI(n){
-  const ms=getMainSpec();
-  const ft=['还没开始/1000粉以内','1000-1万粉','1万粉以上'][state.fans]||'不确定';
-  const gt=['涨粉/提升知名度','引流加微信/到店','直接卖货/成交'][state.goal]||'涨粉';
-  const isLong=n>=7;
-  const bmBlock=buildBenchmarkPrompt();
-  const prompt=`你是专业短视频编导，生成${n}段完整口播脚本。
-
-用户信息：
-- 行业：${state.ind}，视频类型：${state.tpl}，粉丝：${ft}，目标：${gt}
-${state.p1?`- 个人背景：${state.p1}`:''}
-${state.p2?`- 过往经历：${state.p2}`:''}
-${state.prodName?`- 产品名称：${state.prodName}`:''}
-${ms?`- 主推规格价格：${ms}`:''}
-${state.p3detail?`- 产品详细介绍：${state.p3detail}`:''}
-${state.prodImages.length?`- 已上传${state.prodImages.length}张产品图片，请结合图片视觉细节`:''}
-${bmBlock}
-
-要求：
-1. 生成${n}段，完整覆盖：开头吸引→故事背景→产品亮点→价值说明→信任建立→行动转化
-2. 每段台词${isLong?'40字以内':'25字以内'}，每段时长${isLong?'10-15秒':'5-8秒'}
-3. 真诚自然有文化感，不像广告
-4. ${ms?`价格必须用"${ms}"，不能编造数字`:'台词不提具体价格数字'}
-${bmBlock?'5. 风格贴近对标博主，但内容100%用用户自己的产品和故事':''}
-
-【tips 字段说明 - 重要】tips 是3项数组：
-- tips[0] = 这段的「编导思路」，格式必须是【钩子类型】｜【编导理由】，用全角竖线 ｜ 分隔
-  钩子类型从下面这个库里挑最合适的（根据段落在脚本中的位置和功能）：
-
-  开头类（用于第1段）：
-    · 反常识钩子（颠覆认知/制造期待，立人设）
-    · 提问钩子（用问句直击用户疑问）
-    · 数据钩子（用数字制造可信感和震撼）
-    · 反差钩子（前后对比/期待落差）
-
-  中段类（用于第2段到倒数第2段）：
-    · 场景代入（五感唤醒/画面感强）
-    · 情绪共鸣（戳痛点+否定错误认知）
-    · 故事代入（用真实小故事承载产品）
-    · 细节信任（专业术语/独家细节建立专家感）
-    · 颠覆认知（打破用户固有印象）
-
-  结尾类（用于最后一段）：
-    · 稀缺紧迫（限时限量制造紧迫感）
-    · 价值反转（"看似贵其实超划算"）
-    · 行动召唤（明确告诉用户下一步做什么）
-
-  编导理由要写清"为什么这么写"，15-30字，要让拍摄者明白这段的策略意图。
-  示例：「反常识钩子｜用'为什么'问句替代平铺直叙，立16天串北疆的专家人设，激发用户'我也想知道'的好奇心」
-
-- tips[1] = 拍摄要点1（构图/角度/动作建议，10-20字）
-- tips[2] = 拍摄要点2（表情/语气/节奏建议，10-20字）
-
-⚠️ 重要：不同段落要用不同的钩子类型，避免雷同。整条脚本应该有节奏起伏。
-
-【输出格式 - 重要】
-你需要同时输出两个字段：
-1. fullScript：把所有段落的台词按顺序拼接成的完整文案，作为一段连贯的口播稿，方便用户预览全文（不要包含段落编号、不要包含动作和tips）。
-2. segments：分段数组，每段独立完整。
-
-严格JSON：{"fullScript":"完整拼接好的口播文案...","segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}`;
-
-  const r = await callAPI(prompt, 4000, { includeImages: true });
-  // 如果 AI 没返回 fullScript（兼容老调用），用 segments 自动拼一个
-  const parsed = r.parsed;
-  if(!parsed.fullScript && parsed.segments){
-    parsed.fullScript = parsed.segments.map(s=>s.script||'').filter(Boolean).join('');
-  }
-  return parsed;
+  // 【安全改造】前端只收集变量，提示词在后端拼装
+  const vars={
+    n:n,
+    ind:state.ind, tpl:state.tpl, fans:state.fans, goal:state.goal,
+    p1:state.p1||'', p2:state.p2||'',
+    prodName:state.prodName||'', ms:getMainSpec()||'',
+    p3detail:state.p3detail||'',
+    benchmark: hasBenchmark() ? {
+      refs:[...state.benchmarkRefs],
+      gender:state.benchmarkGender||'',
+      vibe:state.benchmarkVibe||''
+    } : null
+  };
+  const r = await callAPI('main_script', vars, 4000, { includeImages: true });
+  return r.parsed.segments;
 }
 
 // ===== UNDO =====
@@ -1490,8 +1289,9 @@ function doUndo(){
 // 段数输入框变化处理
 function onSegCountChange(inp){
   let n = parseInt(inp.value);
-  // 范围校验：至少1段，不设上限
+  // 范围校验
   if(isNaN(n)||n<1) n=1;
+  if(n>20) n=20;
   inp.value=n; // 修正显示
 
   const cur=state.script.length;
@@ -1563,7 +1363,7 @@ function closeAppendPopup(){
 function initBoard(){
   const bmTag=hasBenchmark()?` <span class="benchmark-active-pill">🎯 对标风格</span>`:'';
   document.getElementById('board-title').innerHTML=
-    `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" value="${state.script.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag}`;
+    `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" max="20" value="${state.script.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag}`;
   renderBoard();renderInsertTl();
 }
 
@@ -1589,20 +1389,6 @@ function renderBoard(){
     tl.appendChild(d);
   });
   document.getElementById('board-prog').textContent=`${done}/${segs.length} 完成`;
-  // 色块区展开/收起：段数 ≤ 9 时一行能装下，不显示展开按钮；超出时默认收起
-  const expandBtn = document.getElementById('tl-expand-btn');
-  const COLLAPSE_THRESHOLD = 9;
-  if(segs.length > COLLAPSE_THRESHOLD){
-    expandBtn.classList.add('show');
-    // 当前选中段超过第一行时，自动展开以保证可见
-    const needAutoExpand = state.cur >= COLLAPSE_THRESHOLD;
-    const shouldExpand = tlExpanded || needAutoExpand;
-    tl.classList.toggle('collapsed', !shouldExpand);
-    expandBtn.textContent = shouldExpand ? '收起 ▴' : `展开全部 ${segs.length} 段 ▾`;
-  }else{
-    expandBtn.classList.remove('show');
-    tl.classList.remove('collapsed');
-  }
   const bmTag2=hasBenchmark()?` <span class="benchmark-active-pill">🎯 对标风格</span>`:'';
   // 只更新段数数字，不重建整个标题（避免用户输入中途被打断）
   const inp=document.getElementById('seg-count-input');
@@ -1610,7 +1396,7 @@ function renderBoard(){
     if(document.activeElement!==inp) inp.value=segs.length;
   }else{
     document.getElementById('board-title').innerHTML=
-      `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" value="${segs.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag2}`;
+      `${escapeHtml(state.ind)} · ${escapeHtml(state.tpl)} · 共 <input class="seg-count-input" id="seg-count-input" type="number" min="1" max="20" value="${segs.length}" onchange="onSegCountChange(this)" onkeydown="if(event.key==='Enter')this.blur()"> 段${bmTag2}`;
   }
 
   const s=segs[state.cur];
@@ -1642,7 +1428,7 @@ function renderBoard(){
         <button class="d-block-edit-btn" onclick="startInlineEdit('script')">✏️ 编辑</button>
       </div>
       ${hasOriginal?`<button class="restore-btn" onclick="restoreSeg(${state.cur})">↺ 复原</button>`:''}
-      <div class="d-block-text"><span class="d-script-highlight">${escapeHtml(s.script||'')}</span></div>
+      <div class="d-block-text">${escapeHtml(s.script||'')}</div>
       <div class="d-script-count"><div class="count-dot ${ok?'':'warn'}"></div>${charCount}字 · ${ok?'✓ 节奏合适':'⚠️ 稍长，注意停顿'}</div>
     </div>
   `;
@@ -1705,6 +1491,10 @@ function renderBoard(){
 
   document.getElementById('detail-area').innerHTML=`
     <div class="detail-wrap">
+      <div class="d-head">
+        <span class="d-badge" style="background:${color}">${s.badge||''}</span>
+        <div class="d-metas"><span class="d-meta">${s.dur||''}</span><span class="d-meta">${s.scene||''}</span></div>
+      </div>
       ${scriptBlock}
       ${actionBlock}
       ${tipsBlock}
@@ -1788,22 +1578,20 @@ async function doEditSeg(idx){
   try{
     pushUndo(`修改第${idx+1}段`);
     const ms=getMainSpec();const s=state.script[idx];
-    const isLong=state.script.length>=7;
-    const bmBlock=buildBenchmarkPrompt();
-    const prompt=`你是专业短视频编导，重新生成口播脚本第${idx+1}段。
-产品：${state.prodName||state.ind}，视频类型：${state.tpl}
-${state.p1?`个人背景：${state.p1}`:''}
-${state.p3detail?`产品介绍：${state.p3detail.slice(0,500)}`:''}
-${ms?`主推规格价格：${ms}`:''}
-${bmBlock}
-当前台词：${s.script}
-用户反馈：${fb||'重新生成，换一个角度'}
-台词${isLong?'40字以内':'25字以内'}，真诚自然。${ms?`价格必须用"${ms}"。`:''}${bmBlock?'风格贴近对标博主，但内容是用户自己的。':''}
-tips[0]=编导思路，格式必须是【钩子类型】｜【编导理由】，例如「反常识钩子｜用问句立专家人设」。
-  钩子类型库：反常识钩子/提问钩子/数据钩子/反差钩子/场景代入/情绪共鸣/故事代入/细节信任/颠覆认知/稀缺紧迫/价值反转/行动召唤。
-tips[1]=拍摄要点1，tips[2]=拍摄要点2。
-严格JSON：{"badge":"${s.badge}","script":"新台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"${s.dur}","scene":"${s.scene}"}`;
-    const r=await callAPI(prompt, 500);
+    // 【安全改造】只传变量，提示词在后端
+    const vars={
+      idx:idx, totalSegs:state.script.length,
+      prodName:state.prodName||'', ind:state.ind, tpl:state.tpl,
+      p1:state.p1||'', p3detail:state.p3detail||'', ms:ms||'',
+      curScript:s.script, fb:fb||'',
+      badge:s.badge, dur:s.dur, scene:s.scene,
+      benchmark: hasBenchmark() ? {
+        refs:[...state.benchmarkRefs],
+        gender:state.benchmarkGender||'',
+        vibe:state.benchmarkVibe||''
+      } : null
+    };
+    const r=await callAPI('rewrite_seg', vars, 500);
     state.script[idx]=r.parsed;
     openEditIdx=-1;renderBoard();
   }catch(e){alert('修改失败：'+(e&&e.message?e.message:'请重试'));undoStack.pop();}
@@ -1852,23 +1640,20 @@ async function doAppend(){
   try{
     const ms=getMainSpec();
     const existing=state.script.map((s,i)=>`第${i+1}段：${s.script}`).join('\n');
-    const isLong=state.script.length>=7;
     const insertPos=insertAfterIdx===-1?state.script.length-1:insertAfterIdx;
-    const bmBlock=buildBenchmarkPrompt();
-    const prompt=`你是专业短视频编导，在已有脚本基础上追加新段落。
-产品：${state.prodName||state.ind}，主推：${ms||''}
-${state.p3detail?`产品介绍：${state.p3detail.slice(0,500)}`:''}
-${bmBlock}
-已有${state.script.length}段脚本：${existing}
-追加主题「${topic}」的2-3段，插入到第${insertPos+1}段后面，和前后内容自然衔接，不重复。
-台词${isLong?'40字以内':'25字以内'}。${ms?`价格必须用"${ms}"。`:''}${bmBlock?'风格保持和前面一致（贴近对标博主）。':''}
-tips[0]=编导思路，格式必须是【钩子类型】｜【编导理由】，例如「场景代入｜用具象画面唤醒五感」。
-  钩子类型库：反常识钩子/提问钩子/数据钩子/反差钩子/场景代入/情绪共鸣/故事代入/细节信任/颠覆认知/稀缺紧迫/价值反转/行动召唤。
-  和前后段不要重复用同样的钩子类型。
-tips[1]=拍摄要点1，tips[2]=拍摄要点2。
-严格JSON：{"segments":[{"badge":"名称","script":"台词","action":"动作（2句内）","tips":["钩子类型｜编导理由","拍摄要点1","拍摄要点2"],"dur":"时长","scene":"场景"}]}`;
-
-    const r=await callAPI(prompt, 1500);
+    // 【安全改造】只传变量，提示词在后端
+    const vars={
+      totalSegs:state.script.length,
+      prodName:state.prodName||'', ind:state.ind,
+      p3detail:state.p3detail||'', ms:ms||'',
+      existing:existing, topic:topic, insertPos:insertPos,
+      benchmark: hasBenchmark() ? {
+        refs:[...state.benchmarkRefs],
+        gender:state.benchmarkGender||'',
+        vibe:state.benchmarkVibe||''
+      } : null
+    };
+    const r=await callAPI('append_segs', vars, 1500);
     const newSegs=r.parsed.segments;
 
     pushUndo(`在第${insertPos+1}段后追加「${topic}」`);
