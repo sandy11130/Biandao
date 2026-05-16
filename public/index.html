@@ -66,6 +66,19 @@
   .part-textarea { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; resize: none; line-height: 1.6; background: #fff; transition: border 0.2s; }
   .part-textarea:focus { border-color: var(--orange); }
   .part-count { font-size: 10px; color: var(--text-3); text-align: right; margin-top: 4px; }
+  /* ===== 追问式采集 ===== */
+  .ask-q { margin-bottom: 13px; }
+  .ask-q:last-child { margin-bottom: 0; }
+  .ask-label { font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 5px; line-height: 1.5; }
+  .ask-req { color: #e8543f; font-weight: 700; margin-left: 3px; }
+  .ask-opt { color: var(--text-3); font-weight: 400; font-size: 11px; margin-left: 4px; }
+  .ask-eg { font-size: 11px; color: var(--text-3); background: #fff; border: 1px dashed #e0d2cb; border-radius: 8px; padding: 6px 9px; margin-bottom: 6px; line-height: 1.55; cursor: pointer; transition: all 0.15s; }
+  .ask-eg:hover { border-color: var(--orange); color: var(--orange-dark); }
+  .ask-eg b { color: var(--orange-dark); font-weight: 600; }
+  .ask-inp { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 9px 11px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; resize: none; line-height: 1.6; background: #fff; transition: border 0.2s; }
+  .ask-inp:focus { border-color: var(--orange); }
+  .ask-inp.miss { border-color: #e8543f; background: #fff6f4; }
+  .ask-why { font-size: 10.5px; color: var(--text-3); margin: 14px 0 10px; line-height: 1.6; background: #fffaf6; border-left: 2px solid var(--orange); padding: 7px 10px; border-radius: 0 6px 6px 0; }
 
   .prod-label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
   .prod-name-inp { width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; background: #fff; }
@@ -405,27 +418,48 @@
       <div class="story-parts">
         <div class="story-part">
           <div class="part-num">1</div>
-          <div class="part-title">介绍下你自己的情况</div>
-          <div class="part-hint">做这行多久了？为什么想做这个？说说你的故事</div>
-          <div class="part-examples">
-            <span class="part-eg" onclick="fillEg('p1','我做装修18年了，当年自己装修被坑，所以决定自己做，坚持不偷工减料')">我做装修18年</span>
-            <span class="part-eg" onclick="fillEg('p1','土生土长在这里30年，认识每个村民，带你看真实的家乡不是景点')">土生土长带你看家乡</span>
-            <span class="part-eg" onclick="fillEg('p1','学厨20年，这个配方是我妈留下来的，从没改过一克')">配方从没改过</span>
+          <div class="part-title">先聊聊你这个人 —— 这是别人抄不走的部分</div>
+          <div class="part-hint">不用想怎么写文案，就当我在采访你，照着问题说大白话。说得越具体，出来的脚本越没人能复制。</div>
+
+          <div class="ask-q">
+            <div class="ask-label">你这行干了几年？干这个之前你是做什么的？<span class="ask-req">必答</span></div>
+            <div class="ask-eg" onclick="fillAsk('a1','开烧烤店8年，开店之前我是跑长途货运的，开了12年大货车')">💡 点这看例子：<b>开烧烤店8年，开店之前我是跑长途货运的，开了12年大货车</b>（"货车司机改行开烧烤"——这一句就是别人没有的人设）</div>
+            <textarea class="ask-inp" id="a1" rows="2" placeholder="干了___年；干这个之前我是做___的" oninput="updateAsk()" maxlength="80"></textarea>
           </div>
-          <textarea class="part-textarea" id="p1" rows="3" placeholder="比如：做装修18年了，当年因为自己装修被坑，所以决定自己做..." oninput="updateCount('p1','c1',150)" maxlength="150"></textarea>
-          <div class="part-count" id="c1">0/150字</div>
+
+          <div class="ask-q">
+            <div class="ask-label">当初为什么干这个？有没有一件具体的事让你下了决心？<span class="ask-req">必答</span></div>
+            <div class="ask-eg" onclick="fillAsk('a2','我爸92年开的这家店，他病了那年我从外地辞职回来接的，怕这手艺断在我手上')">💡 点这看例子：<b>我爸92年开的这家店，他病了那年我辞职回来接的，怕手艺断在我手上</b>（要的是"那一件事"，不是"因为喜欢"）</div>
+            <textarea class="ask-inp" id="a2" rows="2" placeholder="不要写'因为喜欢/热爱'，写那个让你下决心的具体的事" oninput="updateAsk()" maxlength="120"></textarea>
+          </div>
+
+          <div class="ask-q">
+            <div class="ask-label">同行都这么做、但你偏不这么做的一件事是什么？<span class="ask-opt">选填，但这条最值钱</span></div>
+            <div class="ask-eg" onclick="fillAsk('a3','别人羊肉提前一天腌料省事，我坚持现穿现腌，宁可让客人多等十分钟')">💡 点这看例子：<b>别人提前一天腌料省事，我坚持现穿现腌，宁可让客人多等十分钟</b>（这就是"为什么选你不选隔壁"的答案）</div>
+            <textarea class="ask-inp" id="a3" rows="2" placeholder="一个你坚持做、但费事/费钱/别人都省掉的事" oninput="updateAsk()" maxlength="120"></textarea>
+          </div>
+
+          <textarea id="p1" style="display:none"></textarea>
         </div>
         <div class="story-part">
           <div class="part-num">2</div>
-          <div class="part-title">以前卖过什么？什么最受欢迎？</div>
-          <div class="part-hint">什么人在买、为什么买、有没有印象深刻的客户故事</div>
-          <div class="part-examples">
-            <span class="part-eg" onclick="fillEg('p2','做过800多个家庭，改善型客户最多，有个客户验收时当场哭了')">客户哭了</span>
-            <span class="part-eg" onclick="fillEg('p2','带过上千个游客，有家人连续5年来，带着孩子来了')">回头客故事</span>
-            <span class="part-eg" onclick="fillEg('p2','老顾客从高中吃到结婚，现在带着孩子来了，10多年了')">老顾客情缘</span>
+          <div class="part-title">再聊聊你的顾客 —— 真实的故事比夸自己有用十倍</div>
+          <div class="part-hint">不用挑"最好"的说，挑"最具体、你记得最清楚"的那个人那件事。</div>
+
+          <div class="ask-q">
+            <div class="ask-label">你跟得最久的一个老顾客，跟了你几年？他第一次来是什么情况？<span class="ask-opt">选填，有就尽量说</span></div>
+            <div class="ask-eg" onclick="fillAsk('b1','有个大哥从我开业第一个月就来，到现在11年，当年他失业天天来坐着，我没赶过他')">💡 点这看例子：<b>有个大哥从开业第一个月就来，到现在11年，当年他失业天天来坐，我没赶过他</b></div>
+            <textarea class="ask-inp" id="b1" rows="2" placeholder="一个具体的人 + 多少年 + 第一次来的具体情形" oninput="updateAsk()" maxlength="120"></textarea>
           </div>
-          <textarea class="part-textarea" id="p2" rows="3" placeholder="比如：做过800多个家庭，最多是改善型客户..." oninput="updateCount('p2','c2',150)" maxlength="150"></textarea>
-          <div class="part-count" id="c2">0/150字</div>
+
+          <div class="ask-q">
+            <div class="ask-label">有没有被顾客投诉过、或者你自己搞砸过的一次？后来怎么处理的？<span class="ask-opt">选填，认怂的故事最可信</span></div>
+            <div class="ask-eg" onclick="fillAsk('b2','有回出餐慢了客人发火，我直接免了单还送他一份，第二天他带了三个朋友来')">💡 点这看例子：<b>有回出餐慢客人发火，我免单还送一份，第二天他带三个朋友来</b>（敢说糗事，信任感拉满，这是AI编不出来的）</div>
+            <textarea class="ask-inp" id="b2" rows="2" placeholder="一次搞砸的具体经过 + 你怎么补救的" oninput="updateAsk()" maxlength="120"></textarea>
+          </div>
+
+          <textarea id="p2" style="display:none"></textarea>
+          <div class="ask-why">为什么问这些：这几个问题的答案，是隔壁同行就算用同样的AI也写不出来的——因为那是<b>你的</b>事。这就是你的脚本能赢过"随便找个AI写"的唯一原因。</div>
         </div>
         <div class="story-part">
           <div class="part-num">3</div>
@@ -446,10 +480,27 @@
             <div class="prod-label" style="margin-top:10px">这条视频主推哪个规格？</div>
             <div class="push-opts" id="push-opts"></div>
           </div>
-          <div class="prod-label" style="margin-top:12px">产品详细介绍</div>
-          <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;line-height:1.5">写越详细AI生成的台词越准确，可以把行程单、房间介绍直接粘贴进来</div>
-          <textarea class="part-textarea" id="p3-detail" rows="8" placeholder="详细说说你的产品——&#10;1. 产品里面是什么样？有哪些特色？&#10;2. 包含什么内容或活动？&#10;3. 为什么值这个价？和别人的区别？&#10;4. 适合什么人来体验？&#10;&#10;（可以把行程单、房间介绍直接粘贴进来）" oninput="updateCount('p3-detail','c3',3000)" maxlength="3000"></textarea>
-          <div class="part-count" id="c3">0/3000字</div>
+          <div class="prod-label" style="margin-top:12px">说说这个产品 <span style="color:var(--text-3);font-weight:400">（一句句答，比写小作文轻松，AI出来也更准）</span></div>
+
+          <div class="ask-q" style="margin-top:8px">
+            <div class="ask-label">这个产品，你最想让人记住的一个点是什么？<span class="ask-req">必答</span></div>
+            <textarea class="ask-inp" id="d1" rows="2" placeholder="只说一个点，最戳人的那个，别罗列一堆" oninput="updateAsk()" maxlength="100"></textarea>
+          </div>
+          <div class="ask-q">
+            <div class="ask-label">它帮顾客解决的那个具体麻烦是什么？不用它的人通常踩什么坑？<span class="ask-opt">选填</span></div>
+            <textarea class="ask-inp" id="d2" rows="2" placeholder="顾客没有它的时候，最头疼的是什么" oninput="updateAsk()" maxlength="150"></textarea>
+          </div>
+          <div class="ask-q">
+            <div class="ask-label">有没有一个内行才知道、外行看不出来的细节或讲究？<span class="ask-opt">选填，但这条最能立专家感</span></div>
+            <textarea class="ask-inp" id="d3" rows="2" placeholder="一个只有干这行的人才懂的门道" oninput="updateAsk()" maxlength="150"></textarea>
+          </div>
+          <div class="ask-q">
+            <div class="ask-label">如果有现成的行程单/菜单/房间介绍，直接粘进来（可跳过）<span class="ask-opt">选填</span></div>
+            <textarea class="ask-inp" id="d4" rows="4" placeholder="有就粘贴，没有就空着，前面几问答好了就够用" oninput="updateAsk()" maxlength="2500"></textarea>
+          </div>
+
+          <textarea id="p3-detail" style="display:none"></textarea>
+          <div class="part-count" id="c3" style="display:none">0/3000字</div>
         </div>
       </div>
 
@@ -999,13 +1050,59 @@ function pickInd(name,el){
   else{oi.style.display='none';document.getElementById('s1-next').disabled=false;}
 }
 function otherInput(v){state.ind=v.trim();document.getElementById('s1-next').disabled=!state.ind;}
-function fillEg(id,text){document.getElementById(id).value=text;updateCount(id,id.replace('p','c'),150);state[id]=text;}
-function updateCount(id,cid,max){
-  const v=document.getElementById(id).value;
-  if(id==='p3-detail')state.p3detail=v;else state[id]=v;
-  const el=document.getElementById(cid);if(el)el.textContent=v.length+'/'+max+'字';
+// ===== 追问式采集：小问答案自动拼接成自然语句，写回后端原字段 =====
+const ASK_GROUPS={
+  p1:[
+    {id:'a1',req:true ,join:(v)=>v},
+    {id:'a2',req:true ,join:(v)=>'当初干这行，'+v},
+    {id:'a3',req:false,join:(v)=>'有件事我跟同行不一样：'+v}
+  ],
+  p2:[
+    {id:'b1',req:false,join:(v)=>'说个老顾客：'+v},
+    {id:'b2',req:false,join:(v)=>'也有过教训：'+v}
+  ],
+  'p3-detail':[
+    {id:'d1',req:true ,join:(v)=>'最想让人记住的一点：'+v},
+    {id:'d2',req:false,join:(v)=>'它解决的麻烦：'+v},
+    {id:'d3',req:false,join:(v)=>'一个内行才懂的讲究：'+v},
+    {id:'d4',req:false,join:(v)=>v}
+  ]
+};
+function fillAsk(id,text){const el=document.getElementById(id);if(el){el.value=text;updateAsk();}}
+function updateAsk(){
+  for(const target in ASK_GROUPS){
+    const parts=[];
+    ASK_GROUPS[target].forEach(q=>{
+      const el=document.getElementById(q.id);
+      const v=el?el.value.trim():'';
+      if(v)parts.push(q.join(v));
+    });
+    const merged=parts.join('。');
+    const hidden=document.getElementById(target);
+    if(hidden)hidden.value=merged;
+    if(target==='p3-detail')state.p3detail=merged;else state[target]=merged;
+  }
 }
-function clearStory(){state.p1='';state.p2='';state.prodName='';state.prodImages=[];state.specs=[];state.mainSpec=null;state.p3detail='';state.benchmarkRefs=['','',''];state.benchmarkVibe='';state.benchmarkGender='';}
+// 必答校验：返回缺失项的输入框id数组（空=通过）
+function checkRequiredAsk(){
+  const miss=[];
+  for(const target in ASK_GROUPS){
+    ASK_GROUPS[target].forEach(q=>{
+      if(!q.req)return;
+      const el=document.getElementById(q.id);
+      if(el){
+        const ok=el.value.trim().length>0;
+        el.classList.toggle('miss',!ok);
+        if(!ok)miss.push(q.id);
+      }
+    });
+  }
+  return miss;
+}
+function clearStory(){
+  state.p1='';state.p2='';state.prodName='';state.prodImages=[];state.specs=[];state.mainSpec=null;state.p3detail='';state.benchmarkRefs=['','',''];state.benchmarkVibe='';state.benchmarkGender='';
+  ['a1','a2','a3','b1','b2','d1','d2','d3','d4'].forEach(id=>{const e=document.getElementById(id);if(e){e.value='';e.classList.remove('miss');}});
+}
 
 // ===== 对标博主风格 =====
 function toggleBenchmark(){
@@ -1094,6 +1191,17 @@ function autoSegCount(){
 
 // ===== GENERATE =====
 async function startGenerate(){
+  updateAsk();
+  const miss=checkRequiredAsk();
+  if(miss.length){
+    const first=document.getElementById(miss[0]);
+    if(first){
+      first.scrollIntoView({behavior:'smooth',block:'center'});
+      setTimeout(()=>first.focus(),300);
+    }
+    alert('还有 '+miss.length+' 个必答没填。\n这几问是脚本"别人抄不走"的关键，随便答一句也比空着强。');
+    return;
+  }
   go('5-loading');
   const n=autoSegCount();
   const bmExtra=hasBenchmark()?'<br><span style="color:var(--orange);font-weight:600">🎯 已应用对标博主风格</span>':'';
